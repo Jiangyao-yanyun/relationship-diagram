@@ -278,6 +278,34 @@
             color: rgba(255, 255, 255, 0.7);
         }
         
+        .zoom-controls {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+        }
+        
+        .zoom-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+        
         @media (max-width: 1100px) {
             .content {
                 flex-direction: column;
@@ -328,6 +356,11 @@
         
         <div class="content">
             <div id="graph-container">
+                <div class="zoom-controls">
+                    <div class="zoom-btn" id="zoom-in">+</div>
+                    <div class="zoom-btn" id="zoom-out">-</div>
+                    <div class="zoom-btn" id="reset-zoom"><i class="fas fa-sync-alt"></i></div>
+                </div>
                 <svg width="100%" height="100%"></svg>
             </div>
             
@@ -347,137 +380,211 @@
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
-        // 重新设计的关系数据结构
-        const relations = [
-            // 江杳关系
-            { source: "江杳", target: "轩辕慕玥", type: "徒弟" },
-            { source: "江杳", target: "星枫飘缈", type: "徒弟" },
-            { source: "江杳", target: "鱼幼曦", type: "徒弟" },
-            { source: "江杳", target: "剑起御春风", type: "徒弟", special: "已叛逃师门" },
-            { source: "江杳", target: "江音", type: "侠缘" },
-            
-            // 江音关系
-            { source: "江音", target: "潇湘妃", type: "徒弟" },
-            
-            // 鱼幼曦关系
-            { source: "鱼幼曦", target: "藤椒手枪腿", type: "徒弟" },
-            { source: "鱼幼曦", target: "沝仙", type: "徒弟" },
-            { source: "鱼幼曦", target: "莫许秋安", type: "徒弟" },
-            { source: "鱼幼曦", target: "月云湛", type: "徒弟" },
-            { source: "鱼幼曦", target: "沐泠秋", type: "徒弟" },
-            { source: "鱼幼曦", target: "遥知不归处", type: "侠缘" },
-            
-            // 莫许秋安关系
-            { source: "莫许秋安", target: "封存余味", type: "徒弟" },
-            { source: "莫许秋安", target: "白夜云帆", type: "徒弟" },
-            
-            // 遥知不归处关系
-            { source: "遥知不归处", target: "林酒行", type: "徒弟" },
-            { source: "遥知不归处", target: "禾老三", type: "徒弟" },
-            { source: "遥知不归处", target: "龙弶", type: "徒弟" },
-            { source: "遥知不归处", target: "流年", type: "徒弟" },
-            
-            // 龙弶关系
-            { source: "龙弶", target: "凤鹤川", type: "徒弟", special: "已叛逃师门" },
-            { source: "龙弶", target: "江嬴晚", type: "徒弟" },
-            { source: "龙弶", target: "陆炎墨", type: "徒弟" },
-            
-            // 剑起御春风关系
-            { source: "剑起御春风", target: "菠萝油多士", type: "徒弟" },
-            { source: "剑起御春风", target: "木白衍", type: "徒弟" },
-            { source: "剑起御春风", target: "寒岁聿", type: "徒弟" },
-            
-            // 寒岁聿关系
-            { source: "寒岁聿", target: "玺安衍", type: "徒弟" },
-            { source: "寒岁聿", target: "陆诩晨", type: "徒弟" },
-            { source: "寒岁聿", target: "上头了呀", type: "徒弟" },
-            { source: "寒岁聿", target: "木白衍", type: "侠缘" },
-            
-            // 上头了呀关系
-            { source: "上头了呀", target: "段慕柔", type: "徒弟" },
-            { source: "上头了呀", target: "姜晚玥", type: "徒弟" },
-            { source: "上头了呀", target: "吉吉国王", type: "徒弟" },
-            { source: "上头了呀", target: "画依依", type: "徒弟" },
-            { source: "上头了呀", target: "只喝百事呗", type: "徒弟" },
-            
-            // 江月关系
-            { source: "江月", target: "机韶逸", type: "徒弟", special: "疑似已被夺舍" },
-            { source: "江月", target: "小宝塔", type: "徒弟" },
-            { source: "江月", target: "老六", type: "徒弟" },
-            { source: "江月", target: "无敌小呆呆", type: "徒弟" },
-            { source: "江月", target: "临渊羡月", type: "侠缘" },
-            { source: "江月", target: "晏燕儿", type: "姐妹" },
-            
-            // 机韶逸关系
-            { source: "机韶逸", target: "殷小闲", type: "徒弟" },
-            { source: "机韶逸", target: "江嬴晚", type: "侠缘" },
-            
-            // 晏燕儿关系
-            { source: "晏燕儿", target: "奶味水饺", type: "徒弟" },
-            { source: "晏燕儿", target: "君澜澜", type: "徒弟" },
-            
-            // 沐泠秋关系
-            { source: "沐泠秋", target: "緍缘", type: "徒弟" },
-            { source: "沐泠秋", target: "红莲嬅", type: "徒弟" },
-            
-            // 禾老三关系
-            { source: "禾老三", target: "悦清言", type: "徒弟" },
-            
-            // 鹿楚盼关系
-            { source: "鹿楚盼", target: "李佳盛", type: "徒弟" }
-        ];
+        // 人物关系数据
+        const relations = {
+            "江杳": {
+                "徒弟": ["轩辕慕玥", "星枫飘缈", "鱼幼曦", "剑起御春风"],
+                "侠缘": ["江音"],
+                "special": ""
+            },
+            "剑起御春风": {
+                "徒弟": ["菠萝油多士", "木白衍", "寒岁聿"],
+                "special": "已叛逃师门"
+            },
+            "江音": {
+                "徒弟": ["潇湘妃"],
+                "special": ""
+            },
+            "鱼幼曦": {
+                "徒弟": ["藤椒手枪腿", "沝仙", "莫许秋安", "月云湛", "沐泠秋"],
+                "侠缘": ["遥知不归处"],
+                "special": ""
+            },
+            "莫许秋安": {
+                "徒弟": ["封存余味", "白夜云帆"],
+                "special": ""
+            },
+            "遥知不归处": {
+                "徒弟": ["林酒行", "禾老三", "龙弶", "流年"],
+                "special": ""
+            },
+            "龙弶": {
+                "徒弟": ["凤鹤川", "江嬴晚", "陆炎墨"],
+                "special": ""
+            },
+            "凤鹤川": {
+                "special": "已叛逃师门"
+            },
+            "寒岁聿": {
+                "徒弟": ["玺安衍", "陆诩晨", "上头了呀"],
+                "侠缘": ["木白衍"],
+                "special": ""
+            },
+            "上头了呀": {
+                "徒弟": ["段慕柔", "姜晚玥", "吉吉国王", "画依依", "只喝百事呗"],
+                "special": ""
+            },
+            "江月": {
+                "徒弟": ["机韶逸", "小宝塔", "老六", "无敌小呆呆"],
+                "侠缘": ["临渊羡月"],
+                "姐妹": ["晏燕儿"],
+                "special": ""
+            },
+            "机韶逸": {
+                "徒弟": ["殷小闲"],
+                "侠缘": ["江嬴晚"],
+                "special": "疑似已被夺舍"
+            },
+            "晏燕儿": {
+                "徒弟": ["奶味水饺", "君澜澜"],
+                "special": ""
+            },
+            "沐泠秋": {
+                "徒弟": ["緍缘", "红莲嬅"],
+                "special": ""
+            },
+            "禾老三": {
+                "徒弟": ["悦清言"],
+                "special": ""
+            },
+            "鹿楚盼": {
+                "徒弟": ["李佳盛"],
+                "special": ""
+            },
+            // 添加可能缺失的人物
+            "轩辕慕玥": {"special": ""},
+            "星枫飘缈": {"special": ""},
+            "菠萝油多士": {"special": ""},
+            "木白衍": {"special": ""},
+            "潇湘妃": {"special": ""},
+            "藤椒手枪腿": {"special": ""},
+            "沝仙": {"special": ""},
+            "月云湛": {"special": ""},
+            "封存余味": {"special": ""},
+            "白夜云帆": {"special": ""},
+            "林酒行": {"special": ""},
+            "禾老三": {"special": ""},
+            "流年": {"special": ""},
+            "江嬴晚": {"special": ""},
+            "陆炎墨": {"special": ""},
+            "玺安衍": {"special": ""},
+            "陆诩晨": {"special": ""},
+            "段慕柔": {"special": ""},
+            "姜晚玥": {"special": ""},
+            "吉吉国王": {"special": ""},
+            "画依依": {"special": ""},
+            "只喝百事呗": {"special": ""},
+            "小宝塔": {"special": ""},
+            "老六": {"special": ""},
+            "无敌小呆呆": {"special": ""},
+            "临渊羡月": {"special": ""},
+            "殷小闲": {"special": ""},
+            "奶味水饺": {"special": ""},
+            "君澜澜": {"special": ""},
+            "緍缘": {"special": ""},
+            "红莲嬅": {"special": ""},
+            "悦清言": {"special": ""},
+            "李佳盛": {"special": ""}
+        };
+
+        // 全局变量用于缩放
+        let transform = d3.zoomIdentity;
+        let svg, g;
 
         // 创建D3力导向图
         function createGraph() {
-            const width = document.getElementById('graph-container').clientWidth;
-            const height = document.getElementById('graph-container').clientHeight;
+            const container = document.getElementById('graph-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
             
             // 清除现有SVG
             d3.select("#graph-container svg").remove();
             
-            const svg = d3.select("#graph-container")
+            svg = d3.select("#graph-container")
                 .append("svg")
                 .attr("width", width)
-                .attr("height", height);
+                .attr("height", height)
+                .call(d3.zoom()
+                    .scaleExtent([0.1, 4])
+                    .on("zoom", (event) => {
+                        transform = event.transform;
+                        g.attr("transform", event.transform);
+                    })
+                )
+                .on("dblclick.zoom", null); // 禁用双击缩放
+                
+            g = svg.append("g");
             
-            // 提取所有节点
+            // 创建节点和链接数据
             const nodes = [];
+            const links = [];
             const nodeMap = {};
             
-            relations.forEach(relation => {
-                if (!nodeMap[relation.source]) {
-                    nodes.push({ id: relation.source });
-                    nodeMap[relation.source] = true;
+            // 添加所有节点
+            Object.keys(relations).forEach(person => {
+                if (!nodeMap[person]) {
+                    nodes.push({ id: person });
+                    nodeMap[person] = true;
                 }
-                if (!nodeMap[relation.target]) {
-                    nodes.push({ id: relation.target });
-                    nodeMap[relation.target] = true;
+                
+                // 添加徒弟
+                if (relations[person].徒弟) {
+                    relations[person].徒弟.forEach(disciple => {
+                        if (!nodeMap[disciple]) {
+                            nodes.push({ id: disciple });
+                            nodeMap[disciple] = true;
+                        }
+                        links.push({ source: person, target: disciple, type: "徒弟" });
+                    });
+                }
+                
+                // 添加侠缘
+                if (relations[person].侠缘) {
+                    relations[person].侠缘.forEach(partner => {
+                        if (!nodeMap[partner]) {
+                            nodes.push({ id: partner });
+                            nodeMap[partner] = true;
+                        }
+                        links.push({ source: person, target: partner, type: "侠缘" });
+                    });
+                }
+                
+                // 添加姐妹
+                if (relations[person].姐妹) {
+                    relations[person].姐妹.forEach(sister => {
+                        if (!nodeMap[sister]) {
+                            nodes.push({ id: sister });
+                            nodeMap[sister] = true;
+                        }
+                        links.push({ source: person, target: sister, type: "姐妹" });
+                    });
                 }
             });
             
             // 创建力导向图模拟
             const simulation = d3.forceSimulation(nodes)
-                .force("link", d3.forceLink(relations).id(d => d.id).distance(100))
+                .force("link", d3.forceLink(links).id(d => d.id).distance(150))
                 .force("charge", d3.forceManyBody().strength(-300))
                 .force("center", d3.forceCenter(width / 2, height / 2))
-                .force("collide", d3.forceCollide(40));
+                .force("collide", d3.forceCollide(50));
             
             // 创建链接
-            const link = svg.append("g")
+            const link = g.append("g")
                 .attr("class", "links")
                 .selectAll("line")
-                .data(relations)
+                .data(links)
                 .enter()
                 .append("line")
                 .attr("class", "link")
                 .attr("stroke", d => {
-                    if (d.type === "侠缘" || d.type === "姐妹") return "#ffb74d";
+                    if (d.type === "侠缘") return "#ffb74d";
+                    if (d.type === "姐妹") return "#ffb74d";
                     return "rgba(255, 255, 255, 0.4)";
                 })
                 .attr("stroke-dasharray", d => d.type === "侠缘" ? "5,5" : "none");
             
             // 创建节点
-            const node = svg.append("g")
+            const node = g.append("g")
                 .attr("class", "nodes")
                 .selectAll("circle")
                 .data(nodes)
@@ -486,28 +593,20 @@
                 .attr("class", "node")
                 .attr("r", 10)
                 .attr("fill", d => {
-                    // 检查是否有特殊标记
-                    const special = relations.find(r => 
-                        (r.source === d.id || r.target === d.id) && r.special
-                    );
+                    if (d.id === "剑起御春风" || d.id === "凤鹤川") return "#f06292";
+                    if (d.id === "机韶逸") return "#ba68c8";
                     
-                    if (d.id === "剑起御春风" || d.id === "凤鹤川") return "#f06292"; // 叛逃师门
-                    if (d.id === "机韶逸") return "#ba68c8"; // 疑似被夺舍
+                    const isMaster = relations[d.id] && relations[d.id].徒弟 && relations[d.id].徒弟.length > 0;
+                    if (isMaster) return "#81c784";
                     
-                    // 检查是否是师父（有徒弟）
-                    const isMaster = relations.some(r => 
-                        r.source === d.id && r.type === "徒弟"
-                    );
-                    if (isMaster) return "#81c784"; // 师父
+                    const hasSpecialRelation = Object.keys(relations).some(person => {
+                        return (relations[person].侠缘 && relations[person].侠缘.includes(d.id)) ||
+                               (relations[person].姐妹 && relations[person].姐妹.includes(d.id));
+                    });
                     
-                    // 检查是否有侠缘/姐妹
-                    const hasSpecialRelation = relations.some(r => 
-                        (r.source === d.id || r.target === d.id) && 
-                        (r.type === "侠缘" || r.type === "姐妹")
-                    );
-                    if (hasSpecialRelation) return "#ffb74d"; // 侠缘/姐妹
+                    if (hasSpecialRelation) return "#ffb74d";
                     
-                    return "#4fc3f7"; // 社众
+                    return "#4fc3f7";
                 })
                 .on("click", function(event, d) {
                     showPersonInfo(d.id);
@@ -519,7 +618,7 @@
                     .on("end", dragended));
             
             // 添加标签
-            const label = svg.append("g")
+            const label = g.append("g")
                 .attr("class", "labels")
                 .selectAll("text")
                 .data(nodes)
@@ -531,22 +630,22 @@
                 .attr("dx", 15)
                 .attr("dy", 4);
             
-            // 添加拖动功能
-            function dragstarted(event) {
+            // 拖动功能
+            function dragstarted(event, d) {
                 if (!event.active) simulation.alphaTarget(0.3).restart();
-                event.subject.fx = event.subject.x;
-                event.subject.fy = event.subject.y;
+                d.fx = d.x;
+                d.fy = d.y;
             }
             
-            function dragged(event) {
-                event.subject.fx = event.x;
-                event.subject.fy = event.y;
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
             }
             
-            function dragended(event) {
+            function dragended(event, d) {
                 if (!event.active) simulation.alphaTarget(0);
-                event.subject.fx = null;
-                event.subject.fy = null;
+                d.fx = null;
+                d.fy = null;
             }
             
             // 更新节点和链接位置
@@ -571,12 +670,8 @@
         function showPersonInfo(personName) {
             const infoPanel = document.getElementById('info-panel');
             
-            // 查找与当前人物相关的所有关系
-            const personRelations = relations.filter(r => 
-                r.source === personName || r.target === personName
-            );
-            
-            if (personRelations.length === 0) {
+            // 检查人物是否存在
+            if (!relations[personName]) {
                 infoPanel.innerHTML = `
                     <h2><i class="fas fa-info-circle"></i> 人物详情</h2>
                     <div class="no-results">
@@ -587,39 +682,25 @@
                 return;
             }
             
-            // 组织关系信息
-            const masters = personRelations
-                .filter(r => r.target === personName && r.type === "徒弟")
-                .map(r => r.source);
+            const personInfo = relations[personName];
             
-            const disciples = personRelations
-                .filter(r => r.source === personName && r.type === "徒弟")
-                .map(r => r.target);
-            
-            const partners = personRelations
-                .filter(r => (r.source === personName || r.target === personName) && r.type === "侠缘")
-                .map(r => r.source === personName ? r.target : r.source);
-            
-            const sisters = personRelations
-                .filter(r => (r.source === personName || r.target === personName) && r.type === "姐妹")
-                .map(r => r.source === personName ? r.target : r.source);
-            
-            // 查找特殊标记
-            const special = personRelations.find(r => 
-                (r.source === personName || r.target === personName) && r.special
-            )?.special;
-            
-            // 构建HTML
             let html = `
                 <h2><i class="fas fa-info-circle"></i> 人物详情</h2>
                 <div class="person-card">
                     <h3>
                         ${personName}
-                        ${special ? `<span class="special">${special}</span>` : ''}
+                        ${personInfo.special ? `<span class="special">${personInfo.special}</span>` : ''}
                     </h3>
             `;
             
-            // 添加师父信息
+            // 查找师父
+            let masters = [];
+            Object.keys(relations).forEach(master => {
+                if (relations[master].徒弟 && relations[master].徒弟.includes(personName)) {
+                    masters.push(master);
+                }
+            });
+            
             if (masters.length > 0) {
                 html += `
                     <div class="relation-section">
@@ -638,14 +719,14 @@
             }
             
             // 添加徒弟信息
-            if (disciples.length > 0) {
+            if (personInfo.徒弟 && personInfo.徒弟.length > 0) {
                 html += `
                     <div class="relation-section">
                         <h4><i class="fas fa-users"></i> 徒弟</h4>
                         <div class="relations">
                 `;
                 
-                disciples.forEach(disciple => {
+                personInfo.徒弟.forEach(disciple => {
                     html += `<div class="relation-item" onclick="highlightPerson('${disciple}')">${disciple}</div>`;
                 });
                 
@@ -656,14 +737,14 @@
             }
             
             // 添加侠缘信息
-            if (partners.length > 0) {
+            if (personInfo.侠缘 && personInfo.侠缘.length > 0) {
                 html += `
                     <div class="relation-section">
                         <h4><i class="fas fa-heart"></i> 侠缘</h4>
                         <div class="relations">
                 `;
                 
-                partners.forEach(partner => {
+                personInfo.侠缘.forEach(partner => {
                     html += `<div class="relation-item" onclick="highlightPerson('${partner}')">${partner}</div>`;
                 });
                 
@@ -674,14 +755,14 @@
             }
             
             // 添加姐妹信息
-            if (sisters.length > 0) {
+            if (personInfo.姐妹 && personInfo.姐妹.length > 0) {
                 html += `
                     <div class="relation-section">
                         <h4><i class="fas fa-female"></i> 姐妹</h4>
                         <div class="relations">
                 `;
                 
-                sisters.forEach(sister => {
+                personInfo.姐妹.forEach(sister => {
                     html += `<div class="relation-item" onclick="highlightPerson('${sister}')">${sister}</div>`;
                 });
                 
@@ -691,9 +772,7 @@
                 `;
             }
             
-            // 结束卡片
             html += `</div>`;
-            
             infoPanel.innerHTML = html;
         }
         
@@ -717,11 +796,7 @@
             if (!searchTerm) return;
             
             // 检查是否存在该人物
-            const exists = relations.some(r => 
-                r.source === searchTerm || r.target === searchTerm
-            );
-            
-            if (exists) {
+            if (relations[searchTerm]) {
                 showPersonInfo(searchTerm);
                 highlightPerson(searchTerm);
             } else {
@@ -768,6 +843,22 @@
                 if (e.key === 'Enter') {
                     searchPerson();
                 }
+            });
+            
+            // 添加缩放功能
+            document.getElementById('zoom-in').addEventListener('click', function() {
+                transform.k = transform.k * 1.2;
+                g.attr('transform', transform);
+            });
+            
+            document.getElementById('zoom-out').addEventListener('click', function() {
+                transform.k = transform.k / 1.2;
+                g.attr('transform', transform);
+            });
+            
+            document.getElementById('reset-zoom').addEventListener('click', function() {
+                transform = d3.zoomIdentity;
+                g.attr('transform', transform);
             });
             
             // 确保函数在全局可访问
