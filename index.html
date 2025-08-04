@@ -560,6 +560,7 @@
                 // 第一代
                 { id: "江杳", group: 1, type: "founder" },
                 { id: "江月", group: 1, type: "founder" },
+                { id: "江音", group: 1, type: "founder" },
                 
                 // 第二代
                 { id: "鱼幼曦", group: 2, type: "disciple", master: "江杳" },
@@ -571,11 +572,13 @@
                 { id: "小宝塔", group: 2, type: "disciple", master: "江月" },
                 { id: "老六", group: 2, type: "disciple", master: "江月" },
                 { id: "无敌小呆呆", group: 2, type: "disciple", master: "江月" },
+
+                 { id: "潇湘妃", group: 2, type: "disciple", master: "江音" },
                 
-                { id: "遥知", group: 2, type: "special" },
+                { id: "遥知不归处", group: 2, type: "special" },
                 
                 // 第三代
-                { id: "木白", group: 3, type: "disciple", master: "剑起" },
+                { id: "木白衍", group: 3, type: "disciple", master: "剑起" },
                 { id: "寒岁聿", group: 3, type: "disciple", master: "剑起" },
                 { id: "菠萝油", group: 3, type: "disciple", master: "剑起" },
                 
@@ -583,10 +586,11 @@
                 { id: "月云湛", group: 3, type: "disciple", master: "鱼幼曦" },
                 { id: "沐泠秋", group: 3, type: "disciple", master: "鱼幼曦" },
                 { id: "莫许秋安", group: 3, type: "disciple", master: "鱼幼曦" },
+                { id: "藤椒手枪腿", group: 3, type: "disciple", master: "鱼幼曦" },
                 
-                { id: "林酒行", group: 3, type: "disciple", master: "遥知" },
-                { id: "禾老三", group: 3, type: "disciple", master: "遥知" },
-                { id: "龙弶", group: 3, type: "disciple", master: "遥知", special: "庶出" },
+                { id: "林酒行", group: 3, type: "disciple", master: "遥知不归处" },
+                { id: "禾老三", group: 3, type: "disciple", master: "遥知不归处" },
+                { id: "龙弶", group: 3, type: "disciple", master: "遥知不归处", special: "庶出" },
                 
                 // 第四代
                 { id: "江赢晚", group: 4, type: "disciple", master: "龙弶" },
@@ -619,13 +623,13 @@
                 { source: "鱼幼曦", target: "沐泠秋", value: 1 },
                 { source: "鱼幼曦", target: "莫许秋安", value: 1 },
                 
-                { source: "剑起", target: "木白", value: 1 },
+                { source: "剑起", target: "木白衍", value: 1 },
                 { source: "剑起", target: "寒岁聿", value: 1 },
                 { source: "剑起", target: "菠萝油", value: 1 },
                 
-                { source: "遥知", target: "林酒行", value: 1 },
-                { source: "遥知", target: "禾老三", value: 1 },
-                { source: "遥知", target: "龙弶", value: 1 },
+                { source: "遥知不归处", target: "林酒行", value: 1 },
+                { source: "遥知不归处", target: "禾老三", value: 1 },
+                { source: "遥知不归处", target: "龙弶", value: 1 },
                 
                 { source: "龙弶", target: "江赢晚", value: 1 },
                 { source: "龙弶", target: "陆炎墨", value: 1 },
@@ -639,8 +643,8 @@
                 // 侠缘关系
                 { source: "江杳", target: "江音", value: 2, type: "special" },
                 { source: "江月", target: "临渊", value: 2, type: "special" },
-                { source: "鱼幼曦", target: "遥知", value: 2, type: "special" },
-                { source: "木白", target: "寒岁聿", value: 2, type: "special" }
+                { source: "鱼幼曦", target: "遥知不归处", value: 2, type: "special" },
+                { source: "木白衍", target: "寒岁聿", value: 2, type: "special" }
             ]
         };
 
@@ -659,11 +663,11 @@
             "鱼幼曦": {
                 master: "江杳",
                 disciples: ["沝仙", "月云湛", "沐泠秋", "莫许秋安"],
-                special: "遥知侠缘"
+                special: "遥知不归处侠缘"
             },
             "剑起": {
                 master: "江杳",
-                disciples: ["木白", "寒岁聿", "菠萝油"],
+                disciples: ["木白衍", "寒岁聿", "菠萝油"],
                 special: "已出师"
             },
             "星枫飘缈": {
@@ -696,12 +700,12 @@
                 disciples: [],
                 special: "618"
             },
-            "遥知": {
+            "遥知不归处": {
                 master: "无",
                 disciples: ["林酒行", "禾老三", "龙弶"],
                 special: "鱼幼曦侠缘"
             },
-            "木白": {
+            "木白衍": {
                 master: "剑起",
                 disciples: [],
                 special: "寒岁聿侠缘"
@@ -709,7 +713,7 @@
             "寒岁聿": {
                 master: "剑起",
                 disciples: ["什么安什么"],
-                special: "木白侠缘"
+                special: "木白衍侠缘"
             },
             "菠萝油": {
                 master: "剑起",
@@ -737,17 +741,17 @@
                 special: ""
             },
             "林酒行": {
-                master: "遥知",
+                master: "遥知不归处",
                 disciples: [],
                 special: ""
             },
             "禾老三": {
-                master: "遥知",
+                master: "遥知不归处",
                 disciples: [],
                 special: ""
             },
             "龙弶": {
-                master: "遥知",
+                master: "遥知不归处",
                 disciples: ["江赢晚", "陆炎墨", "凤鹤川"],
                 special: "庶出"
             },
