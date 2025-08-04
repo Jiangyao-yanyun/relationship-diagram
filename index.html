@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>共享人物关系图</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #2a3b6c, #3a4b6c);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: rgba(30, 35, 48, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ffcc00;
+            text-shadow: 0 2px 10px rgba(255, 204, 0, 0.4);
+            letter-spacing: 1px;
+            background: linear-gradient(to right, #ffcc00, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            max-width: 900px;
+            margin: 0 auto;
+            line-height: 1.7;
+            color: #aab4d0;
+        }
+        
+        .share-section {
+            background: rgba(30, 40, 60, 0.7);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 600px;
+            text-align: center;
+        }
+        
+        .share-btn {
+            background: #4a6fc9;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .share-btn i {
+            margin-right: 8px;
+        }
+        
+        .share-btn:hover {
+            background: #5a7fd9;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .graph-container {
+            flex: 1;
+            min-width: 300px;
+            background: rgba(25, 30, 45, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+            height: 750px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .data-panel {
+            flex: 0 0 350px;
+            background: rgba(25, 30, 45, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+            height: 750px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .panel-header {
+            color: #ffcc00;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 1.8rem;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 204, 0, 0.3);
+            position: relative;
+        }
+        
+        .panel-header:after {
+            content: "";
+            position: absolute;
+            bottom: -2px;
+            left: 35%;
+            width: 30%;
+            height: 3px;
+            background: linear-gradient(to right, transparent, #ffcc00, transparent);
+        }
+        
+        .person-details {
+            background: rgba(35, 40, 60, 0.7);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            animation: fadeIn 0.6s ease-out;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .person-name {
+            font-size: 1.7rem;
+            color: #4fc3f7;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ffcc00;
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .person-name i {
+            margin-right: 12px;
+            font-size: 1.5rem;
+            color: #ffcc00;
+        }
+        
+        .relationships {
+            margin-top: 20px;
+        }
+        
+        .relationship-group {
+            margin-bottom: 20px;
+        }
+        
+        .relationship-title {
+            color: #ffcc00;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .relationship-title i {
+            margin-right: 10px;
+            font-size: 1.3rem;
+        }
+        
+        .relationship-list {
+            padding-left: 10px;
+        }
+        
+        .relationship-list li {
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            background: rgba(55, 65, 95, 0.5);
+            border-radius: 8px;
+            transition: all 0.3s;
+            list-style-type: none;
+            position: relative;
+            padding-left: 35px;
+            border-left: 3px solid #ffcc00;
+        }
+        
+        .relationship-list li:before {
+            content: "→";
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #ffcc00;
+            font-size: 1.2rem;
+        }
+        
+        .relationship-list li:hover {
+            background: rgba(80, 100, 150, 0.7);
+            transform: translateX(8px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .instructions {
+            background: rgba(25, 30, 45, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+            margin-top: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .instructions h2 {
+            color: #ffcc00;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 2rem;
+        }
+        
+        .instructions-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+        }
+        
+        .instruction-card {
+            background: rgba(35, 40, 60, 0.7);
+            border-radius: 10px;
+            padding: 25px;
+            transition: all 0.4s;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .instruction-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 204, 0, 0.3);
+        }
+        
+        .instruction-card h3 {
+            color: #4fc3f7;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            font-size: 1.5rem;
+        }
+        
+        .instruction-card h3 i {
+            margin-right: 12px;
+            font-size: 1.8rem;
+            color: #ffcc00;
+        }
+        
+        .instruction-card ul {
+            padding-left: 25px;
+        }
+        
+        .instruction-card li {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            position: relative;
+            padding-left: 30px;
+            font-size: 1.1rem;
+        }
+        
+        .instruction-card li:before {
+            content: "•";
+            color: #ffcc00;
+            font-size: 1.8rem;
+            position: absolute;
+            left: 0;
+            top: -3px;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 25px;
+            color: #aab4d0;
+            font-size: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .highlight {
+            color: #ffcc00;
+            font-weight: bold;
+            background: rgba(255, 204, 0, 0.15);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        /* D3.js graph styling */
+        .node {
+            cursor: pointer;
+            stroke: #fff;
+            stroke-width: 2px;
+            filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
+            transition: all 0.3s;
+        }
+        
+        .node:hover {
+            transform: scale(1.15);
+            stroke: #ffcc00;
+        }
+        
+        .node-text {
+            fill: white;
+            font-size: 14px;
+            text-anchor: middle;
+            pointer-events: none;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        .link {
+            stroke: rgba(200, 200, 255, 0.7);
+            stroke-width: 2;
+        }
+        
+        .special-link {
+            stroke: #ff6b6b;
+            stroke-dasharray: 5, 5;
+            stroke-width: 2;
+        }
+        
+        .highlighted {
+            stroke: #ffcc00;
+            stroke-width: 4;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { stroke-width: 4px; }
+            50% { stroke-width: 6px; }
+            100% { stroke-width: 4px; }
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 25px;
+            right: 25px;
+            background: rgba(15, 20, 35, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .legend h3 {
+            color: #ffcc00;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .legend-color {
+            width: 22px;
+            height: 3px;
+            margin-right: 12px;
+        }
+        
+        .normal-link { background: rgba(200, 200, 255, 0.7); }
+        .special-link-legend { background: #ff6b6b; }
+        
+        .node-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+        
+        .founder-color { background: #ff6b6b; }
+        .second-gen-color { background: #4fc3f7; }
+        .third-gen-color { background: #66bb6a; }
+        .fourth-gen-color { background: #ffcc00; }
+        .partner-color { background: #9c27b0; }
+        
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+        }
+        
+        .control-btn {
+            background: rgba(0, 0, 0, 0.6);
+            color: #ffcc00;
+            border: 1px solid #ffcc00;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 204, 0, 0.2);
+        }
+        
+        @media (max-width: 1100px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .data-panel {
+                flex-basis: auto;
+                height: auto;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+        }
+        
+        .deploy-guide {
+            background: rgba(25, 30, 45, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px auto;
+            max-width: 800px;
+        }
+        
+        .deploy-steps {
+            counter-reset: step-counter;
+        }
+        
+        .step {
+            margin-bottom: 25px;
+            padding-left: 60px;
+            position: relative;
+        }
+        
+        .step:before {
+            counter-increment: step-counter;
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            background: #4fc3f7;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .step h3 {
+            margin-bottom: 10px;
+            color: #ffcc00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>共享人物关系图谱</h1>
+            <p class="subtitle">这是一个共享的交互式人物关系图，您和您的朋友可以随时访问此网页查看关系图</p>
+        </header>
+        
+        <div class="share-section">
+            <h2>分享给朋友</h2>
+            <p>复制当前网址并发送给您的朋友，他们即可访问此关系图</p>
+            <div>
+                <button class="share-btn" id="copy-link">
+                    <i>🔗</i> 复制链接
+                </button>
+                <button class="share-btn" id="share-qq">
+                    <i>💬</i> 分享到QQ
+                </button>
+                <button class="share-btn" id="share-wechat">
+                    <i>📱</i> 分享到微信
+                </button>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="graph-container" id="graph">
+                <div class="controls">
+                    <div class="control-btn" id="stabilize">稳定布局</div>
+                    <div class="control-btn" id="reset">重置视图</div>
+                    <div class="control-btn" id="center">居中视图</div>
+                </div>
+            </div>
+            
+            <div class="data-panel">
+                <h2 class="panel-header">人物详情</h2>
+                <div class="person-details" id="details-content">
+                    <p>点击关系图中的人物节点查看详细信息</p>
+                </div>
+                
+                <div class="person-details">
+                    <h3>当前访问信息</h3>
+                    <p id="access-info">正在获取访问信息...</p>
+                    <p id="visit-count">访问次数: 加载中...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="deploy-guide">
+            <h2 style="text-align: center; color: #ffcc00; margin-bottom: 25px;">部署指南</h2>
+            <div class="deploy-steps">
+                <div class="step">
+                    <h3>创建GitHub账号</h3>
+                    <p>访问 <a href="https://github.com" target="_blank" style="color: #4fc3f7;">github.com</a> 并注册一个新账号（如果还没有）</p>
+                </div>
+                
+                <div class="step">
+                    <h3>创建新仓库</h3>
+                    <p>登录后，点击右上角"+" → "New repository"，命名为"relationship-diagram"</p>
+                </div>
+                
+                <div class="step">
+                    <h3>上传文件</h3>
+                    <p>在仓库页面，点击"Add file" → "Upload files"，将本页HTML代码保存为"index.html"后上传</p>
+                </div>
+                
+                <div class="step">
+                    <h3>启用GitHub Pages</h3>
+                    <p>在仓库Settings → Pages → Source，选择分支（main）和文件夹（/(root)），点击Save</p>
+                </div>
+                
+                <div class="step">
+                    <h3>分享链接</h3>
+                    <p>几分钟后，访问 <span style="background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 4px;">https://&lt;你的用户名&gt;.github.io/relationship-diagram/</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h2>使用说明</h2>
+            <div class="instructions-content">
+                <div class="instruction-card">
+                    <h3><i>🔍</i> 查看关系</h3>
+                    <ul>
+                        <li>点击图中任意人物节点，右侧面板显示详细信息</li>
+                        <li>不同颜色连线表示不同类型的关系</li>
+                        <li>使用鼠标滚轮缩放关系图</li>
+                        <li>按住鼠标拖动平移视图</li>
+                        <li>点击"稳定布局"停止节点运动</li>
+                    </ul>
+                </div>
+                
+                <div class="instruction-card">
+                    <h3><i>📱</i> 多设备支持</h3>
+                    <ul>
+                        <li>在电脑、平板和手机上均可使用</li>
+                        <li>自动适应不同屏幕尺寸</li>
+                        <li>手机端可通过双指缩放查看细节</li>
+                        <li>所有数据实时加载，无需安装</li>
+                    </ul>
+                </div>
+                
+                <div class="instruction-card">
+                    <h3><i>🔄</i> 控制功能</h3>
+                    <ul>
+                        <li><span class="highlight">稳定布局</span>：停止节点运动</li>
+                        <li><span class="highlight">重置视图</span>：恢复初始位置和缩放</li>
+                        <li><span class="highlight">居中视图</span>：将图形移到中心</li>
+                        <li>点击空白处取消选择</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>共享人物关系图 | 使用D3.js构建 | 部署在GitHub Pages</p>
+        </footer>
+    </div>
+
+    <script>
+        // 人物关系数据
+        const relationshipData = {
+            nodes: [
+                // 第一代
+                { id: "江杳", group: 1, type: "founder" },
+                { id: "江月", group: 1, type: "founder" },
+                
+                // 第二代
+                { id: "鱼幼曦", group: 2, type: "disciple", master: "江杳" },
+                { id: "剑起", group: 2, type: "disciple", master: "江杳", graduated: true },
+                { id: "星枫飘缈", group: 2, type: "disciple", master: "江杳" },
+                { id: "轩辕", group: 2, type: "disciple", master: "江杳" },
+                
+                { id: "机少", group: 2, type: "disciple", master: "江月" },
+                { id: "小宝塔", group: 2, type: "disciple", master: "江月" },
+                { id: "老六", group: 2, type: "disciple", master: "江月" },
+                { id: "无敌小呆呆", group: 2, type: "disciple", master: "江月" },
+                
+                { id: "遥知", group: 2, type: "special" },
+                
+                // 第三代
+                { id: "木白", group: 3, type: "disciple", master: "剑起" },
+                { id: "寒岁聿", group: 3, type: "disciple", master: "剑起" },
+                { id: "菠萝油", group: 3, type: "disciple", master: "剑起" },
+                
+                { id: "沝仙", group: 3, type: "disciple", master: "鱼幼曦" },
+                { id: "月云湛", group: 3, type: "disciple", master: "鱼幼曦" },
+                { id: "沐泠秋", group: 3, type: "disciple", master: "鱼幼曦" },
+                { id: "莫许秋安", group: 3, type: "disciple", master: "鱼幼曦" },
+                
+                { id: "林酒行", group: 3, type: "disciple", master: "遥知" },
+                { id: "禾老三", group: 3, type: "disciple", master: "遥知" },
+                { id: "龙弶", group: 3, type: "disciple", master: "遥知", special: "庶出" },
+                
+                // 第四代
+                { id: "江赢晚", group: 4, type: "disciple", master: "龙弶" },
+                { id: "陆炎墨", group: 4, type: "disciple", master: "龙弶" },
+                { id: "凤鹤川", group: 4, type: "disciple", master: "龙弶", graduated: true },
+                
+                { id: "封存鱼尾", group: 4, type: "disciple", master: "莫许秋安", special: "瓦" },
+                { id: "白夜云帆", group: 4, type: "disciple", master: "莫许秋安", special: "瓦" },
+                
+                { id: "什么安什么", group: 4, type: "disciple", master: "寒岁聿" },
+                
+                // 侠缘关系节点
+                { id: "江音", group: 0, type: "partner" },
+                { id: "临渊", group: 0, type: "partner" }
+            ],
+            links: [
+                // 师徒关系
+                { source: "江杳", target: "鱼幼曦", value: 1 },
+                { source: "江杳", target: "剑起", value: 1 },
+                { source: "江杳", target: "星枫飘缈", value: 1 },
+                { source: "江杳", target: "轩辕", value: 1 },
+                
+                { source: "江月", target: "机少", value: 1 },
+                { source: "江月", target: "小宝塔", value: 1 },
+                { source: "江月", target: "老六", value: 1 },
+                { source: "江月", target: "无敌小呆呆", value: 1 },
+                
+                { source: "鱼幼曦", target: "沝仙", value: 1 },
+                { source: "鱼幼曦", target: "月云湛", value: 1 },
+                { source: "鱼幼曦", target: "沐泠秋", value: 1 },
+                { source: "鱼幼曦", target: "莫许秋安", value: 1 },
+                
+                { source: "剑起", target: "木白", value: 1 },
+                { source: "剑起", target: "寒岁聿", value: 1 },
+                { source: "剑起", target: "菠萝油", value: 1 },
+                
+                { source: "遥知", target: "林酒行", value: 1 },
+                { source: "遥知", target: "禾老三", value: 1 },
+                { source: "遥知", target: "龙弶", value: 1 },
+                
+                { source: "龙弶", target: "江赢晚", value: 1 },
+                { source: "龙弶", target: "陆炎墨", value: 1 },
+                { source: "龙弶", target: "凤鹤川", value: 1 },
+                
+                { source: "莫许秋安", target: "封存鱼尾", value: 1 },
+                { source: "莫许秋安", target: "白夜云帆", value: 1 },
+                
+                { source: "寒岁聿", target: "什么安什么", value: 1 },
+                
+                // 侠缘关系
+                { source: "江杳", target: "江音", value: 2, type: "special" },
+                { source: "江月", target: "临渊", value: 2, type: "special" },
+                { source: "鱼幼曦", target: "遥知", value: 2, type: "special" },
+                { source: "木白", target: "寒岁聿", value: 2, type: "special" }
+            ]
+        };
+
+        // 人物详细信息
+        const personDetails = {
+            "江杳": {
+                master: "无",
+                disciples: ["鱼幼曦", "剑起", "星枫飘缈", "轩辕"],
+                special: "江音侠缘"
+            },
+            "江月": {
+                master: "无",
+                disciples: ["机少", "小宝塔", "老六", "无敌小呆呆"],
+                special: "临渊侠缘"
+            },
+            "鱼幼曦": {
+                master: "江杳",
+                disciples: ["沝仙", "月云湛", "沐泠秋", "莫许秋安"],
+                special: "遥知侠缘"
+            },
+            "剑起": {
+                master: "江杳",
+                disciples: ["木白", "寒岁聿", "菠萝油"],
+                special: "已出师"
+            },
+            "星枫飘缈": {
+                master: "江杳",
+                disciples: [],
+                special: ""
+            },
+            "轩辕": {
+                master: "江杳",
+                disciples: [],
+                special: ""
+            },
+            "机少": {
+                master: "江月",
+                disciples: [],
+                special: ""
+            },
+            "小宝塔": {
+                master: "江月",
+                disciples: [],
+                special: ""
+            },
+            "老六": {
+                master: "江月",
+                disciples: [],
+                special: ""
+            },
+            "无敌小呆呆": {
+                master: "江月",
+                disciples: [],
+                special: "618"
+            },
+            "遥知": {
+                master: "无",
+                disciples: ["林酒行", "禾老三", "龙弶"],
+                special: "鱼幼曦侠缘"
+            },
+            "木白": {
+                master: "剑起",
+                disciples: [],
+                special: "寒岁聿侠缘"
+            },
+            "寒岁聿": {
+                master: "剑起",
+                disciples: ["什么安什么"],
+                special: "木白侠缘"
+            },
+            "菠萝油": {
+                master: "剑起",
+                disciples: [],
+                special: ""
+            },
+            "沝仙": {
+                master: "鱼幼曦",
+                disciples: [],
+                special: ""
+            },
+            "月云湛": {
+                master: "鱼幼曦",
+                disciples: [],
+                special: ""
+            },
+            "沐泠秋": {
+                master: "鱼幼曦",
+                disciples: [],
+                special: ""
+            },
+            "莫许秋安": {
+                master: "鱼幼曦",
+                disciples: ["封存鱼尾", "白夜云帆"],
+                special: ""
+            },
+            "林酒行": {
+                master: "遥知",
+                disciples: [],
+                special: ""
+            },
+            "禾老三": {
+                master: "遥知",
+                disciples: [],
+                special: ""
+            },
+            "龙弶": {
+                master: "遥知",
+                disciples: ["江赢晚", "陆炎墨", "凤鹤川"],
+                special: "庶出"
+            },
+            "江赢晚": {
+                master: "龙弶",
+                disciples: [],
+                special: ""
+            },
+            "陆炎墨": {
+                master: "龙弶",
+                disciples: [],
+                special: ""
+            },
+            "凤鹤川": {
+                master: "龙弶",
+                disciples: [],
+                special: "已出师"
+            },
+            "封存鱼尾": {
+                master: "莫许秋安",
+                disciples: [],
+                special: "瓦"
+            },
+            "白夜云帆": {
+                master: "莫许秋安",
+                disciples: [],
+                special: "瓦"
+            },
+            "什么安什么": {
+                master: "寒岁聿",
+                disciples: [],
+                special: ""
+            },
+            "江音": {
+                master: "无",
+                disciples: [],
+                special: "江杳侠缘"
+            },
+            "临渊": {
+                master: "无",
+                disciples: [],
+                special: "江月侠缘"
+            }
+        };
+
+        // 创建关系图
+        const width = document.getElementById('graph').clientWidth;
+        const height = document.getElementById('graph').clientHeight;
+
+        const svg = d3.select("#graph")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .call(d3.zoom().on("zoom", (event) => {
+                svgGroup.attr("transform", event.transform);
+            }))
+            .append("g");
+        
+        const svgGroup = svg.append("g");
+
+        // 创建力导向图 - 优化物理参数
+        const simulation = d3.forceSimulation(relationshipData.nodes)
+            .force("link", d3.forceLink(relationshipData.links).id(d => d.id).distance(150))
+            .force("charge", d3.forceManyBody().strength(-200))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("collision", d3.forceCollide().radius(d => {
+                if (d.type === "founder") return 40;
+                if (d.type === "partner") return 35;
+                if (d.group === 2) return 30;
+                if (d.group === 3) return 25;
+                return 20;
+            }))
+            .alphaDecay(0.05) // 减慢衰减速度
+            .alphaMin(0.1); // 设置最小alpha值
+
+        // 绘制连线
+        const link = svgGroup.append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(relationshipData.links)
+            .enter()
+            .append("line")
+            .attr("class", d => d.type === "special" ? "special-link" : "link")
+            .attr("stroke-width", 2);
+
+        // 绘制节点 - 增大节点尺寸
+        const node = svgGroup.append("g")
+            .attr("class", "nodes")
+            .selectAll("circle")
+            .data(relationshipData.nodes)
+            .enter()
+            .append("circle")
+            .attr("class", "node")
+            .attr("r", d => {
+                if (d.type === "founder") return 30;
+                if (d.type === "partner") return 28;
+                if (d.group === 2) return 26;
+                if (d.group === 3) return 24;
+                return 22;
+            })
+            .attr("fill", d => {
+                if (d.type === "founder") return "#ff6b6b";
+                if (d.type === "partner") return "#9c27b0";
+                if (d.group === 2) return "#4fc3f7";
+                if (d.group === 3) return "#66bb6a";
+                return "#ffcc00";
+            })
+            .on("click", (event, d) => {
+                // 移除之前的选择
+                node.classed("selected", false);
+                // 设置当前选择
+                d3.select(event.currentTarget).classed("selected", true);
+                showPersonDetails(d.id);
+                highlightConnections(d.id);
+            });
+
+        // 添加节点文字
+        const text = svgGroup.append("g")
+            .attr("class", "texts")
+            .selectAll("text")
+            .data(relationshipData.nodes)
+            .enter()
+            .append("text")
+            .attr("class", "node-text")
+            .text(d => d.id)
+            .attr("dy", d => {
+                if (d.type === "founder") return 8;
+                return 6;
+            })
+            .attr("font-size", d => {
+                if (d.type === "founder") return "16px";
+                if (d.group === 2) return "14px";
+                return "13px";
+            });
+
+        // 更新节点位置
+        simulation.on("tick", () => {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+
+            text
+                .attr("x", d => d.x)
+                .attr("y", d => d.y);
+        });
+
+        // 添加稳定布局按钮功能
+        document.getElementById("stabilize").addEventListener("click", () => {
+            simulation.stop();
+        });
+        
+        // 添加重置视图按钮功能
+        document.getElementById("reset").addEventListener("click", () => {
+            // 重置变换
+            svgGroup.transition()
+                .duration(750)
+                .attr("transform", "translate(0,0) scale(1)");
+            // 重启模拟
+            simulation.alpha(1).restart();
+            // 清除选择
+            node.classed("selected", false);
+            document.getElementById("details-content").innerHTML = "<p>点击关系图中的人物节点查看详细信息</p>";
+            link.attr("stroke", d => d.type === "special" ? "#ff6b6b" : "rgba(255, 255, 255, 0.6)")
+                .attr("stroke-width", 2);
+        });
+        
+        // 添加居中视图按钮功能
+        document.getElementById("center").addEventListener("click", () => {
+            // 计算图形边界
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            node.each(d => {
+                if (d.x < minX) minX = d.x;
+                if (d.y < minY) minY = d.y;
+                if (d.x > maxX) maxX = d.x;
+                if (d.y > maxY) maxY = d.y;
+            });
+            
+            const graphWidth = maxX - minX;
+            const graphHeight = maxY - minY;
+            const scale = 0.85 / Math.max(graphWidth / width, graphHeight / height);
+            const translateX = (width - (minX + maxX) * scale) / 2;
+            const translateY = (height - (minY + maxY) * scale) / 2;
+            
+            svgGroup.transition()
+                .duration(1000)
+                .attr("transform", `translate(${translateX},${translateY}) scale(${scale})`);
+        });
+
+        // 显示人物详情
+        function showPersonDetails(personId) {
+            const details = personDetails[personId];
+            if (!details) {
+                document.getElementById("details-content").innerHTML = `
+                    <div class="person-name"><i>❓</i> ${personId}</div>
+                    <p>该人物暂无详细信息</p>
+                `;
+                return;
+            }
+            
+            let html = `
+                <div class="person-name"><i>👤</i> ${personId}</div>
+                <div class="relationships">
+                    <div class="relationship-group">
+                        <div class="relationship-title"><i>👨‍🏫</i> 师承</div>
+                        <div>${details.master || "无"}</div>
+                    </div>
+            `;
+            
+            if (details.disciples && details.disciples.length > 0) {
+                html += `
+                    <div class="relationship-group">
+                        <div class="relationship-title"><i>👥</i> 门下弟子</div>
+                        <ul class="relationship-list">
+                `;
+                details.disciples.forEach(disciple => {
+                    html += `<li>${disciple}</li>`;
+                });
+                html += `
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            if (details.special) {
+                html += `
+                    <div class="relationship-group">
+                        <div class="relationship-title"><i>❤️</i> 特殊关系</div>
+                        <div>${details.special}</div>
+                    </div>
+                `;
+            }
+            
+            html += `</div>`;
+            
+            document.getElementById("details-content").innerHTML = html;
+        }
+
+        // 高亮相关连接
+        function highlightConnections(personId) {
+            // 重置所有连线样式
+            link
+                .classed("highlighted", false)
+                .attr("stroke", d => d.type === "special" ? "#ff6b6b" : "rgba(255, 255, 255, 0.6)")
+                .attr("stroke-width", 2);
+            
+            // 高亮与当前节点相关的连线
+            link.filter(d => d.source.id === personId || d.target.id === personId)
+                .classed("highlighted", true)
+                .attr("stroke", "#ffcc00")
+                .attr("stroke-width", 4);
+        }
+
+        // 创建图例
+        const legend = d3.select(".graph-container")
+            .append("div")
+            .attr("class", "legend");
+            
+        legend.append("h3").text("图例");
+        
+        legend.append("div").attr("class", "legend-item")
+            .html('<div class="legend-color normal-link"></div><span>师徒关系</span>');
+            
+        legend.append("div").attr("class", "legend-item")
+            .html('<div class="legend-color special-link-legend"></div><span>侠缘关系</span>');
+            
+        legend.append("div").attr("class", "legend-item")
+            .html('<div class="node-color founder-color"></div><span>祖师</span>');
+            
+        legend.append("div").attr("class", "legend-item")
+            .html('<div class="node-color second-gen-color"></div><span>二代弟子</span>');
+            
+        legend.append("div").attr("class", "legend-item")
+            .html('<div class="node-color third-gen-color"></div><span>三代弟子</span>');
+            
+        legend.append("div").attr("class", "legend-item")
+            .html('<div class="node-color fourth-gen-color"></div><span>四代弟子</span>');
+            
+        legend.append("div").attr("class", "legend-item")
+            .html('<div class="node-color partner-color"></div><span>侠缘</span>');
+
+        // 初始显示江杳的详情
+        setTimeout(() => {
+            // 自动稳定布局
+            simulation.stop();
+            showPersonDetails("江杳");
+            highlightConnections("江杳");
+        }, 3000);
+        
+        // 点击空白处取消选择
+        svgGroup.on("click", (event) => {
+            if (event.target === svgGroup.node()) {
+                node.classed("selected", false);
+                document.getElementById("details-content").innerHTML = "<p>点击关系图中的人物节点查看详细信息</p>";
+                link
+                    .classed("highlighted", false)
+                    .attr("stroke", d => d.type === "special" ? "#ff6b6b" : "rgba(255, 255, 255, 0.6)")
+                    .attr("stroke-width", 2);
+            }
+        });
+        
+        // 分享功能
+        document.getElementById('copy-link').addEventListener('click', function() {
+            const tempInput = document.createElement('input');
+            tempInput.value = window.location.href;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            
+            alert('链接已复制到剪贴板！');
+        });
+        
+        // 模拟访问信息
+        document.getElementById('access-info').textContent = 
+            `访问设备: ${navigator.userAgent.split(') ')[0].split(' (')[1] || '未知设备'}`;
+        
+        // 模拟访问次数
+        let visitCount = localStorage.getItem('visitCount') || 0;
+        visitCount = parseInt(visitCount) + 1;
+        localStorage.setItem('visitCount', visitCount);
+        document.getElementById('visit-count').textContent = `访问次数: ${visitCount}`;
+    </script>
+</body>
+</html>
