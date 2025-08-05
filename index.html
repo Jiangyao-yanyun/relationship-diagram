@@ -551,6 +551,13 @@
             animation: fadeInOut 2s ease;
         }
         
+        .github-form {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        
         @keyframes fadeInOut {
             0% { opacity: 0; transform: translateY(20px); }
             20% { opacity: 1; transform: translateY(0); }
@@ -654,12 +661,12 @@
         </div>
         
         <footer>
-            <p>©百业关系图谱 | 如需修改联系江杳</p>
+            <p>©百业关系图谱 | 数据存储在GitHub仓库中，所有用户实时同步</p>
         </footer>
     </div>
 
     <div class="storage-status" id="storage-status">
-        <i class="fas fa-save"></i> 数据已保存
+        <i class="fas fa-save"></i> 数据已保存到GitHub
     </div>
 
     <!-- 管理员模态框 -->
@@ -683,6 +690,28 @@
             </div>
             
             <div id="edit-section" style="display: none;">
+                <div class="github-form">
+                    <h3><i class="fab fa-github"></i> GitHub数据存储设置</h3>
+                    <div class="form-group">
+                        <label for="github-token">GitHub个人访问令牌：</label>
+                        <input type="password" id="github-token" class="form-control" placeholder="输入GitHub Token...">
+                        <small style="color: #95a5a6; display: block; margin-top: 5px;">
+                            需要创建具有repo权限的GitHub Token
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="repo-name">仓库名称：</label>
+                        <input type="text" id="repo-name" class="form-control" placeholder="例如：baiye-relations">
+                    </div>
+                    <div class="form-group">
+                        <label for="file-path">数据文件路径：</label>
+                        <input type="text" id="file-path" class="form-control" placeholder="例如：data/relations.json">
+                    </div>
+                    <button id="test-github" class="btn-save" style="margin-top: 10px;">
+                        <i class="fas fa-plug"></i> 测试GitHub连接
+                    </button>
+                </div>
+                
                 <div class="form-group">
                     <label>当前编辑人物：</label>
                     <div class="search-box">
@@ -691,7 +720,6 @@
                     </div>
                     <select id="current-person-select" class="form-control select-with-search">
                         <option value="">选择人物...</option>
-                        <!-- 人物选项将通过JS动态填充 -->
                     </select>
                 </div>
                 
@@ -703,7 +731,6 @@
                     </div>
                     <select id="relation-person" class="form-control select-with-search">
                         <option value="">选择人物...</option>
-                        <!-- 人物选项将通过JS动态填充 -->
                     </select>
                     
                     <label style="margin-top: 15px;">关系类型：</label>
@@ -726,7 +753,6 @@
                 <div class="form-group">
                     <label>删除关系：</label>
                     <div id="existing-relations">
-                        <!-- 现有关系将通过JS动态填充 -->
                     </div>
                 </div>
                 
@@ -866,23 +892,111 @@
             };
         }
 
-        // 从localStorage加载数据，如果没有则使用初始数据
-        let relations = JSON.parse(localStorage.getItem('baiye-relations')) || getInitialRelations();
-
         // 全局变量
+        let relations = getInitialRelations();
         let transform = d3.zoomIdentity;
         let svg, g;
         let simulation;
         let currentEditPerson = null;
-        const adminPassword = "yanyun123"; // 管理员密码
+        const adminPassword = "yanyun123";
         let isAdminLoggedIn = false;
-
-        // 保存数据到localStorage
-        function saveData() {
-            localStorage.setItem('baiye-relations', JSON.stringify(relations));
-            showStorageStatus("数据已保存");
+        
+        // 从GitHub加载数据
+        async function loadDataFromGitHub() {
+            const repoName = document.getElementById('repo-name').value;
+            const filePath = document.getElementById('file-path').value;
+            const token = document.getElementById('github-token').value;
+            
+            if (!repoName || !filePath || !token) {
+                console.log("GitHub配置不完整");
+                return false;
+            }
+            
+            try {
+                const url = `https://api.github.com/repos/${repoName}/contents/${filePath}`;
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`GitHub API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const content = atob(data.content);
+                relations = JSON.parse(content);
+                
+                showStorageStatus("数据已从GitHub加载");
+                return true;
+            } catch (error) {
+                console.error("从GitHub加载数据失败:", error);
+                showStorageStatus("加载GitHub数据失败");
+                return false;
+            }
         }
-
+        
+        // 保存数据到GitHub
+        async function saveDataToGitHub() {
+            const repoName = document.getElementById('repo-name').value;
+            const filePath = document.getElementById('file-path').value;
+            const token = document.getElementById('github-token').value;
+            
+            if (!repoName || !filePath || !token) {
+                console.log("GitHub配置不完整");
+                return false;
+            }
+            
+            try {
+                // 首先获取文件SHA（如果存在）
+                let sha = null;
+                const getUrl = `https://api.github.com/repos/${repoName}/contents/${filePath}`;
+                const getResponse = await fetch(getUrl, {
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                if (getResponse.ok) {
+                    const fileData = await getResponse.json();
+                    sha = fileData.sha;
+                }
+                
+                // 更新文件
+                const content = JSON.stringify(relations, null, 2);
+                const encodedContent = btoa(unescape(encodeURIComponent(content)));
+                
+                const updateUrl = `https://api.github.com/repos/${repoName}/contents/${filePath}`;
+                const response = await fetch(updateUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: '更新百业关系图谱数据',
+                        content: encodedContent,
+                        sha: sha
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`GitHub API error: ${response.status}`);
+                }
+                
+                showStorageStatus("数据已保存到GitHub");
+                return true;
+            } catch (error) {
+                console.error("保存数据到GitHub失败:", error);
+                showStorageStatus("保存到GitHub失败");
+                return false;
+            }
+        }
+        
         // 显示存储状态通知
         function showStorageStatus(message) {
             const status = document.getElementById('storage-status');
@@ -991,10 +1105,10 @@
                 .append("line")
                 .attr("class", "link")
                 .attr("stroke", d => {
-                    if (d.type === "侠缘") return "#ffb74d"; // 橙色
-                    if (d.type === "姐妹") return "#ffb74d"; // 橙色
-                    if (d.type === "结义") return "#9b59b6"; // 紫色
-                    return "rgba(255, 255, 255, 0.4)"; // 默认白色
+                    if (d.type === "侠缘") return "#ffb74d";
+                    if (d.type === "姐妹") return "#ffb74d";
+                    if (d.type === "结义") return "#9b59b6";
+                    return "rgba(255, 255, 255, 0.4)";
                 })
                 .attr("stroke-dasharray", d => d.type === "侠缘" ? "5,5" : "none");
             
@@ -1008,13 +1122,13 @@
                 .attr("class", "node")
                 .attr("r", 10)
                 .attr("fill", d => {
-                    if (d.id === "剑起御春风" || d.id === "凤鹤川") return "#f06292"; // 红色
-                    if (d.id === "机韶逸") return "#ba68c8"; // 紫色
+                    if (d.id === "剑起御春风" || d.id === "凤鹤川") return "#f06292";
+                    if (d.id === "机韶逸") return "#ba68c8";
                     
                     const isMaster = relations[d.id] && 
                                     ((relations[d.id].徒弟 && relations[d.id].徒弟.length > 0) ||
                                      (relations[d.id].结义 && relations[d.id].结义.length > 0));
-                    if (isMaster) return "#81c784"; // 绿色
+                    if (isMaster) return "#81c784";
                     
                     const hasSpecialRelation = Object.keys(relations).some(person => {
                         return (relations[person].侠缘 && relations[person].侠缘.includes(d.id)) ||
@@ -1022,15 +1136,14 @@
                                (relations[person].结义 && relations[person].结义.includes(d.id));
                     });
                     
-                    if (hasSpecialRelation) return "#ffb74d"; // 橙色
+                    if (hasSpecialRelation) return "#ffb74d";
                     
-                    return "#4fc3f7"; // 蓝色
+                    return "#4fc3f7";
                 })
                 .on("click", function(event, d) {
                     showPersonInfo(d.id);
                     highlightPerson(d.id);
                     
-                    // 如果管理员已登录，设置当前编辑人物
                     if (isAdminLoggedIn) {
                         currentEditPerson = d.id;
                         document.getElementById('current-person-select').value = d.id;
@@ -1097,7 +1210,6 @@
         function showPersonInfo(personName) {
             const infoPanel = document.getElementById('info-panel');
             
-            // 检查人物是否存在
             if (!relations[personName]) {
                 infoPanel.innerHTML = `
                     <h2><i class="fas fa-info-circle"></i> 人物详情</h2>
@@ -1240,7 +1352,6 @@
             
             if (!searchTerm) return;
             
-            // 检查是否存在该人物
             if (relations[searchTerm]) {
                 showPersonInfo(searchTerm);
                 highlightPerson(searchTerm);
@@ -1267,7 +1378,6 @@
             const select = document.getElementById('current-person-select');
             select.innerHTML = '<option value="">选择人物...</option>';
             
-            // 获取所有人物
             Object.keys(relations).forEach(person => {
                 const option = document.createElement('option');
                 option.value = person;
@@ -1281,7 +1391,6 @@
             const select = document.getElementById('relation-person');
             select.innerHTML = '<option value="">选择人物...</option>';
             
-            // 获取所有人物（排除当前编辑人物）
             Object.keys(relations)
                 .filter(person => person !== currentEditPerson)
                 .forEach(person => {
@@ -1383,28 +1492,30 @@
         }
         
         // 移除关系
-        function removeRelation(relationType, targetPerson) {
+        async function removeRelation(relationType, targetPerson) {
             if (!confirm(`确定要删除与 ${targetPerson} 的${relationType}关系吗？`)) return;
             
-            // 从当前人物关系中删除
             const index = relations[currentEditPerson][relationType].indexOf(targetPerson);
             if (index !== -1) {
                 relations[currentEditPerson][relationType].splice(index, 1);
             }
             
-            // 更新UI
             populateExistingRelations();
             createGraph();
             showPersonInfo(currentEditPerson);
             highlightPerson(currentEditPerson);
             
-            // 保存到本地存储
-            saveData();
-            alert("关系已删除！");
+            // 保存到GitHub
+            const result = await saveDataToGitHub();
+            if (result) {
+                alert("关系已删除并保存到GitHub！");
+            } else {
+                alert("关系已删除，但保存到GitHub失败！");
+            }
         }
         
         // 添加关系
-        function addRelation() {
+        async function addRelation() {
             const targetPerson = document.getElementById('relation-person').value;
             const relationType = document.querySelector('.relation-type.active')?.dataset.type;
             
@@ -1418,17 +1529,14 @@
                 return;
             }
             
-            // 确保关系类型存在
             if (!relations[currentEditPerson][relationType]) {
                 relations[currentEditPerson][relationType] = [];
             }
             
-            // 添加关系
             if (!relations[currentEditPerson][relationType].includes(targetPerson)) {
                 relations[currentEditPerson][relationType].push(targetPerson);
             }
             
-            // 如果是结义关系，需要在对方关系中也添加
             if (relationType === "结义") {
                 if (!relations[targetPerson]) {
                     relations[targetPerson] = { special: "" };
@@ -1443,17 +1551,19 @@
                 }
             }
             
-            // 更新UI
             populateExistingRelations();
             createGraph();
             showPersonInfo(currentEditPerson);
             highlightPerson(currentEditPerson);
             
-            // 保存到本地存储
-            saveData();
-            alert("关系已添加！");
+            // 保存到GitHub
+            const result = await saveDataToGitHub();
+            if (result) {
+                alert("关系已添加并保存到GitHub！");
+            } else {
+                alert("关系已添加，但保存到GitHub失败！");
+            }
             
-            // 重置选择
             document.getElementById('relation-person').value = "";
             document.querySelectorAll('.relation-type').forEach(el => {
                 el.classList.remove('active');
@@ -1461,28 +1571,28 @@
         }
         
         // 保存更改
-        function saveChanges() {
-            // 更新特殊标记
+        async function saveChanges() {
             relations[currentEditPerson].special = document.getElementById('special-mark').value || "";
             
-            // 更新UI
             createGraph();
             showPersonInfo(currentEditPerson);
             highlightPerson(currentEditPerson);
             
-            // 保存到本地存储
-            saveData();
-            alert("更改已保存！");
+            // 保存到GitHub
+            const result = await saveDataToGitHub();
+            if (result) {
+                alert("更改已保存到GitHub！");
+            } else {
+                alert("更改已保存，但保存到GitHub失败！");
+            }
         }
         
         // 删除人物
-        function deletePerson() {
+        async function deletePerson() {
             if (!confirm(`确定要删除人物 ${currentEditPerson} 吗？此操作不可撤销！`)) return;
             
-            // 删除人物
             delete relations[currentEditPerson];
             
-            // 从所有关系中删除该人物
             Object.keys(relations).forEach(person => {
                 ['徒弟', '侠缘', '姐妹', '结义'].forEach(relationType => {
                     if (relations[person][relationType]) {
@@ -1494,13 +1604,11 @@
                 });
             });
             
-            // 重置UI
             currentEditPerson = null;
             document.getElementById('current-person-select').value = "";
             document.getElementById('existing-relations').innerHTML = "";
             document.getElementById('special-mark').value = "";
             
-            // 重新创建图谱
             createGraph();
             document.getElementById('info-panel').innerHTML = `
                 <h2><i class="fas fa-info-circle"></i> 人物详情</h2>
@@ -1510,13 +1618,17 @@
                 </div>
             `;
             
-            // 保存到本地存储
-            saveData();
-            alert("人物已删除！");
+            // 保存到GitHub
+            const result = await saveDataToGitHub();
+            if (result) {
+                alert("人物已删除并保存到GitHub！");
+            } else {
+                alert("人物已删除，但保存到GitHub失败！");
+            }
         }
         
         // 添加新人物
-        function addNewPerson() {
+        async function addNewPerson() {
             const newPersonName = document.getElementById('new-person-name').value.trim();
             
             if (!newPersonName) {
@@ -1529,30 +1641,30 @@
                 return;
             }
             
-            // 添加新人物
             relations[newPersonName] = {
                 special: ""
             };
             
-            // 更新UI
             document.getElementById('new-person-name').value = "";
             populateCurrentPersonDropdown();
             populateRelationDropdown();
             createGraph();
             
-            // 保存到本地存储
-            saveData();
-            alert(`人物 ${newPersonName} 添加成功！`);
+            // 保存到GitHub
+            const result = await saveDataToGitHub();
+            if (result) {
+                alert(`人物 ${newPersonName} 添加成功并保存到GitHub！`);
+            } else {
+                alert(`人物 ${newPersonName} 添加成功，但保存到GitHub失败！`);
+            }
         }
         
         // 重置数据
-        function resetData() {
-            if (!confirm("确定要重置所有数据吗？此操作将恢复初始数据并清除所有修改！")) return;
+        async function resetData() {
+            if (!confirm("确定要重置所有数据吗？此操作将恢复初始数据！")) return;
             
             relations = getInitialRelations();
-            localStorage.setItem('baiye-relations', JSON.stringify(relations));
             
-            // 更新UI
             createGraph();
             document.getElementById('info-panel').innerHTML = `
                 <h2><i class="fas fa-info-circle"></i> 人物详情</h2>
@@ -1562,7 +1674,6 @@
                 </div>
             `;
             
-            // 重置管理员面板
             if (isAdminLoggedIn) {
                 currentEditPerson = null;
                 document.getElementById('current-person-select').value = "";
@@ -1572,7 +1683,13 @@
                 populateRelationDropdown();
             }
             
-            alert("数据已重置为初始状态！");
+            // 保存到GitHub
+            const result = await saveDataToGitHub();
+            if (result) {
+                alert("数据已重置并保存到GitHub！");
+            } else {
+                alert("数据已重置，但保存到GitHub失败！");
+            }
         }
         
         // 搜索当前人物下拉框选项
@@ -1620,7 +1737,6 @@
             populateExistingRelations();
             document.getElementById('special-mark').value = relations[personName].special || "";
             
-            // 高亮显示选中人物
             highlightPerson(personName);
             showPersonInfo(personName);
         }
@@ -1689,7 +1805,6 @@
                     document.getElementById('edit-section').style.display = 'block';
                     document.getElementById('password-error').style.display = 'none';
                     
-                    // 初始化下拉框
                     populateCurrentPersonDropdown();
                     populateRelationDropdown();
                 } else {
@@ -1725,6 +1840,17 @@
             
             // 重置数据
             document.getElementById('reset-data').addEventListener('click', resetData);
+            
+            // 测试GitHub连接
+            document.getElementById('test-github').addEventListener('click', async function() {
+                const result = await loadDataFromGitHub();
+                if (result) {
+                    createGraph();
+                    alert("GitHub连接成功，数据已加载！");
+                } else {
+                    alert("GitHub连接失败，请检查配置！");
+                }
+            });
             
             // 当前人物搜索
             document.getElementById('current-person-search').addEventListener('keyup', searchCurrentPersonOptions);
