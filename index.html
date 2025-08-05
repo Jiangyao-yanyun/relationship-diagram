@@ -198,7 +198,7 @@
             border-radius: 20px;
             cursor: pointer;
             transition: all 0.2s ease;
-            color: #fff; /* 确保文字可见 */
+            color: #fff;
         }
         
         .relation-item:hover {
@@ -339,18 +339,18 @@
             width: 90%;
             max-width: 600px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            color: #ecf0f1; /* 确保文字可见 */
+            color: #ecf0f1;
         }
 
-       .admin-content select.form-control {
-       color: #333 !important;
-       background: rgba(255, 255, 255, 0.85) !important;
-       }
+        .admin-content select.form-control {
+            color: #333 !important;
+            background: rgba(255, 255, 255, 0.85) !important;
+        }
 
-       .admin-content select.form-control option {
-     color: #333;
-     background: rgba(255, 255, 255, 0.9);
-       }
+        .admin-content select.form-control option {
+            color: #333;
+            background: rgba(255, 255, 255, 0.9);
+        }
         
         .admin-header {
             display: flex;
@@ -433,6 +433,10 @@
             background: linear-gradient(45deg, #3498db, #2980b9);
         }
         
+        .btn-reset {
+            background: linear-gradient(45deg, #f39c12, #d35400);
+        }
+        
         .relation-types {
             display: flex;
             gap: 10px;
@@ -489,6 +493,71 @@
             margin-right: 5px;
         }
         
+        /* 搜索框样式 */
+        .search-box {
+            position: relative;
+            margin-bottom: 10px;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .search-box input {
+            padding-left: 40px;
+            width: 100%;
+        }
+        
+        /* 下拉框样式 */
+        .select-with-search {
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-top: 5px;
+        }
+        
+        .select-with-search option {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .select-with-search option:hover {
+            background-color: rgba(52, 152, 219, 0.3);
+        }
+        
+        .select-with-search option:checked {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .storage-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(46, 204, 113, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            display: none;
+            animation: fadeInOut 2s ease;
+        }
+        
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(20px); }
+            20% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(20px); }
+        }
+
         @media (max-width: 1100px) {
             .content {
                 flex-direction: column;
@@ -510,6 +579,13 @@
             
             .relation-types {
                 flex-direction: column;
+            }
+            
+            .storage-status {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                text-align: center;
             }
         }
     </style>
@@ -578,8 +654,12 @@
         </div>
         
         <footer>
-            <p>©百业关系图谱 | 如需修改联系江杳或管理员</p>
+            <p>©百业关系图谱 | 数据已本地存储，刷新不会丢失</p>
         </footer>
+    </div>
+
+    <div class="storage-status" id="storage-status">
+        <i class="fas fa-save"></i> 数据已保存
     </div>
 
     <!-- 管理员模态框 -->
@@ -605,12 +685,23 @@
             <div id="edit-section" style="display: none;">
                 <div class="form-group">
                     <label>当前编辑人物：</label>
-                    <div id="current-person" style="font-size: 1.4rem; color: #3498db; padding: 10px 0;"></div>
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="current-person-search" class="form-control" placeholder="搜索人物...">
+                    </div>
+                    <select id="current-person-select" class="form-control select-with-search">
+                        <option value="">选择人物...</option>
+                        <!-- 人物选项将通过JS动态填充 -->
+                    </select>
                 </div>
                 
                 <div class="form-group">
                     <label>添加关系：</label>
-                    <select id="relation-person" class="form-control">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="relation-person-search" class="form-control" placeholder="搜索人物...">
+                    </div>
+                    <select id="relation-person" class="form-control select-with-search">
                         <option value="">选择人物...</option>
                         <!-- 人物选项将通过JS动态填充 -->
                     </select>
@@ -651,6 +742,7 @@
                 <div class="admin-actions">
                     <button id="save-btn" class="btn-save"><i class="fas fa-save"></i> 保存更改</button>
                     <button id="delete-person" class="btn-delete"><i class="fas fa-trash-alt"></i> 删除人物</button>
+                    <button id="reset-data" class="btn-reset"><i class="fas fa-history"></i> 重置数据</button>
                 </div>
                 
                 <div class="new-person-form">
@@ -667,111 +759,115 @@
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
-        // 人物关系数据
-        const relations = {
-            "江杳": {
-                "徒弟": ["轩辕慕玥", "星枫飘缈", "鱼幼曦", "剑起御春风"],
-                "侠缘": ["江音"],
-                "special": ""
-            },
-            "剑起御春风": {
-                "徒弟": ["菠萝油多士", "木白衍", "寒岁聿"],
-                "special": "已叛逃师门"
-            },
-            "江音": {
-                "徒弟": ["潇湘妃"],
-                "special": ""
-            },
-            "鱼幼曦": {
-                "徒弟": ["藤椒手枪腿", "沝仙", "莫许秋安", "月云湛", "沐泠秋"],
-                "侠缘": ["遥知不归处"],
-                "special": ""
-            },
-            "莫许秋安": {
-                "徒弟": ["封存余味", "白夜云帆"],
-                "special": ""
-            },
-            "遥知不归处": {
-                "徒弟": ["林酒行", "禾老三", "龙弶", "流年"],
-                "special": ""
-            },
-            "龙弶": {
-                "徒弟": ["凤鹤川", "江嬴晚", "陆炎墨"],
-                "special": ""
-            },
-            "凤鹤川": {
-                "special": "已叛逃师门"
-            },
-            "寒岁聿": {
-                "徒弟": ["玺安衍", "陆诩晨", "上头了呀"],
-                "侠缘": ["木白衍"],
-                "special": ""
-            },
-            "上头了呀": {
-                "徒弟": ["段慕柔", "姜晚玥", "吉吉国王", "画依依", "只喝百事呗"],
-                "special": ""
-            },
-            "江月": {
-                "徒弟": ["机韶逸", "小宝塔", "老六", "无敌小呆呆"],
-                "侠缘": ["临渊羡月"],
-                "姐妹": ["晏燕儿"],
-                "special": ""
-            },
-            "机韶逸": {
-                "徒弟": ["殷小闲"],
-                "侠缘": ["江嬴晚"],
-                "special": "疑似已被夺舍"
-            },
-            "晏燕儿": {
-                "徒弟": ["奶味水饺", "君澜澜"],
-                "special": ""
-            },
-            "沐泠秋": {
-                "徒弟": ["緍缘", "红莲嬅"],
-                "special": ""
-            },
-            "禾老三": {
-                "徒弟": ["悦清言"],
-                "special": ""
-            },
-            "鹿楚盼": {
-                "徒弟": ["李佳盛"],
-                "special": ""
-            },
-            // 添加其他人物
-            "轩辕慕玥": {"special": ""},
-            "星枫飘缈": {"special": ""},
-            "菠萝油多士": {"special": ""},
-            "木白衍": {"special": ""},
-            "潇湘妃": {"special": ""},
-            "藤椒手枪腿": {"special": ""},
-            "沝仙": {"special": ""},
-            "月云湛": {"special": ""},
-            "封存余味": {"special": ""},
-            "白夜云帆": {"special": ""},
-            "林酒行": {"special": ""},
-            "流年": {"special": ""},
-            "江嬴晚": {"special": ""},
-            "陆炎墨": {"special": ""},
-            "玺安衍": {"special": ""},
-            "陆诩晨": {"special": ""},
-            "段慕柔": {"special": ""},
-            "姜晚玥": {"special": ""},
-            "吉吉国王": {"special": ""},
-            "画依依": {"special": ""},
-            "只喝百事呗": {"special": ""},
-            "小宝塔": {"special": ""},
-            "老六": {"special": ""},
-            "无敌小呆呆": {"special": ""},
-            "临渊羡月": {"special": ""},
-            "殷小闲": {"special": ""},
-            "奶味水饺": {"special": ""},
-            "君澜澜": {"special": ""},
-            "緍缘": {"special": ""},
-            "红莲嬅": {"special": ""},
-            "悦清言": {"special": ""},
-            "李佳盛": {"special": ""}
-        };
+        // 初始数据函数
+        function getInitialRelations() {
+            return {
+                "江杳": {
+                    "徒弟": ["轩辕慕玥", "星枫飘缈", "鱼幼曦", "剑起御春风"],
+                    "侠缘": ["江音"],
+                    "special": ""
+                },
+                "剑起御春风": {
+                    "徒弟": ["菠萝油多士", "木白衍", "寒岁聿"],
+                    "special": "已叛逃师门"
+                },
+                "江音": {
+                    "徒弟": ["潇湘妃"],
+                    "special": ""
+                },
+                "鱼幼曦": {
+                    "徒弟": ["藤椒手枪腿", "沝仙", "莫许秋安", "月云湛", "沐泠秋"],
+                    "侠缘": ["遥知不归处"],
+                    "special": ""
+                },
+                "莫许秋安": {
+                    "徒弟": ["封存余味", "白夜云帆"],
+                    "special": ""
+                },
+                "遥知不归处": {
+                    "徒弟": ["林酒行", "禾老三", "龙弶", "流年"],
+                    "special": ""
+                },
+                "龙弶": {
+                    "徒弟": ["凤鹤川", "江嬴晚", "陆炎墨"],
+                    "special": ""
+                },
+                "凤鹤川": {
+                    "special": "已叛逃师门"
+                },
+                "寒岁聿": {
+                    "徒弟": ["玺安衍", "陆诩晨", "上头了呀"],
+                    "侠缘": ["木白衍"],
+                    "special": ""
+                },
+                "上头了呀": {
+                    "徒弟": ["段慕柔", "姜晚玥", "吉吉国王", "画依依", "只喝百事呗"],
+                    "special": ""
+                },
+                "江月": {
+                    "徒弟": ["机韶逸", "小宝塔", "老六", "无敌小呆呆"],
+                    "侠缘": ["临渊羡月"],
+                    "姐妹": ["晏燕儿"],
+                    "special": ""
+                },
+                "机韶逸": {
+                    "徒弟": ["殷小闲"],
+                    "侠缘": ["江嬴晚"],
+                    "special": "疑似已被夺舍"
+                },
+                "晏燕儿": {
+                    "徒弟": ["奶味水饺", "君澜澜"],
+                    "special": ""
+                },
+                "沐泠秋": {
+                    "徒弟": ["緍缘", "红莲嬅"],
+                    "special": ""
+                },
+                "禾老三": {
+                    "徒弟": ["悦清言"],
+                    "special": ""
+                },
+                "鹿楚盼": {
+                    "徒弟": ["李佳盛"],
+                    "special": ""
+                },
+                "轩辕慕玥": {"special": ""},
+                "星枫飘缈": {"special": ""},
+                "菠萝油多士": {"special": ""},
+                "木白衍": {"special": ""},
+                "潇湘妃": {"special": ""},
+                "藤椒手枪腿": {"special": ""},
+                "沝仙": {"special": ""},
+                "月云湛": {"special": ""},
+                "封存余味": {"special": ""},
+                "白夜云帆": {"special": ""},
+                "林酒行": {"special": ""},
+                "流年": {"special": ""},
+                "江嬴晚": {"special": ""},
+                "陆炎墨": {"special": ""},
+                "玺安衍": {"special": ""},
+                "陆诩晨": {"special": ""},
+                "段慕柔": {"special": ""},
+                "姜晚玥": {"special": ""},
+                "吉吉国王": {"special": ""},
+                "画依依": {"special": ""},
+                "只喝百事呗": {"special": ""},
+                "小宝塔": {"special": ""},
+                "老六": {"special": ""},
+                "无敌小呆呆": {"special": ""},
+                "临渊羡月": {"special": ""},
+                "殷小闲": {"special": ""},
+                "奶味水饺": {"special": ""},
+                "君澜澜": {"special": ""},
+                "緍缘": {"special": ""},
+                "红莲嬅": {"special": ""},
+                "悦清言": {"special": ""},
+                "李佳盛": {"special": ""}
+            };
+        }
+
+        // 从localStorage加载数据，如果没有则使用初始数据
+        let relations = JSON.parse(localStorage.getItem('baiye-relations')) || getInitialRelations();
 
         // 全局变量
         let transform = d3.zoomIdentity;
@@ -780,6 +876,23 @@
         let currentEditPerson = null;
         const adminPassword = "yanyun123"; // 管理员密码
         let isAdminLoggedIn = false;
+
+        // 保存数据到localStorage
+        function saveData() {
+            localStorage.setItem('baiye-relations', JSON.stringify(relations));
+            showStorageStatus("数据已保存");
+        }
+
+        // 显示存储状态通知
+        function showStorageStatus(message) {
+            const status = document.getElementById('storage-status');
+            status.textContent = message;
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 2000);
+        }
 
         // 创建D3力导向图
         function createGraph() {
@@ -920,7 +1033,7 @@
                     // 如果管理员已登录，设置当前编辑人物
                     if (isAdminLoggedIn) {
                         currentEditPerson = d.id;
-                        document.getElementById('current-person').textContent = d.id;
+                        document.getElementById('current-person-select').value = d.id;
                         populateRelationDropdown();
                         populateExistingRelations();
                         document.getElementById('special-mark').value = relations[d.id].special || "";
@@ -1149,6 +1262,20 @@
         
         // 管理员功能
         
+        // 填充当前人物下拉框
+        function populateCurrentPersonDropdown() {
+            const select = document.getElementById('current-person-select');
+            select.innerHTML = '<option value="">选择人物...</option>';
+            
+            // 获取所有人物
+            Object.keys(relations).forEach(person => {
+                const option = document.createElement('option');
+                option.value = person;
+                option.textContent = person;
+                select.appendChild(option);
+            });
+        }
+        
         // 填充关系下拉框
         function populateRelationDropdown() {
             const select = document.getElementById('relation-person');
@@ -1270,6 +1397,9 @@
             createGraph();
             showPersonInfo(currentEditPerson);
             highlightPerson(currentEditPerson);
+            
+            // 保存到本地存储
+            saveData();
             alert("关系已删除！");
         }
         
@@ -1318,6 +1448,9 @@
             createGraph();
             showPersonInfo(currentEditPerson);
             highlightPerson(currentEditPerson);
+            
+            // 保存到本地存储
+            saveData();
             alert("关系已添加！");
             
             // 重置选择
@@ -1336,6 +1469,9 @@
             createGraph();
             showPersonInfo(currentEditPerson);
             highlightPerson(currentEditPerson);
+            
+            // 保存到本地存储
+            saveData();
             alert("更改已保存！");
         }
         
@@ -1360,7 +1496,7 @@
             
             // 重置UI
             currentEditPerson = null;
-            document.getElementById('current-person').textContent = "";
+            document.getElementById('current-person-select').value = "";
             document.getElementById('existing-relations').innerHTML = "";
             document.getElementById('special-mark').value = "";
             
@@ -1374,6 +1510,8 @@
                 </div>
             `;
             
+            // 保存到本地存储
+            saveData();
             alert("人物已删除！");
         }
         
@@ -1398,10 +1536,93 @@
             
             // 更新UI
             document.getElementById('new-person-name').value = "";
+            populateCurrentPersonDropdown();
             populateRelationDropdown();
             createGraph();
             
+            // 保存到本地存储
+            saveData();
             alert(`人物 ${newPersonName} 添加成功！`);
+        }
+        
+        // 重置数据
+        function resetData() {
+            if (!confirm("确定要重置所有数据吗？此操作将恢复初始数据并清除所有修改！")) return;
+            
+            relations = getInitialRelations();
+            localStorage.setItem('baiye-relations', JSON.stringify(relations));
+            
+            // 更新UI
+            createGraph();
+            document.getElementById('info-panel').innerHTML = `
+                <h2><i class="fas fa-info-circle"></i> 人物详情</h2>
+                <div class="no-results">
+                    <i class="fas fa-user fa-3x"></i>
+                    <p>点击左侧图谱中的人物节点查看详细信息</p>
+                </div>
+            `;
+            
+            // 重置管理员面板
+            if (isAdminLoggedIn) {
+                currentEditPerson = null;
+                document.getElementById('current-person-select').value = "";
+                document.getElementById('existing-relations').innerHTML = "";
+                document.getElementById('special-mark').value = "";
+                populateCurrentPersonDropdown();
+                populateRelationDropdown();
+            }
+            
+            alert("数据已重置为初始状态！");
+        }
+        
+        // 搜索当前人物下拉框选项
+        function searchCurrentPersonOptions() {
+            const input = document.getElementById('current-person-search');
+            const filter = input.value.toUpperCase();
+            const select = document.getElementById('current-person-select');
+            const options = select.getElementsByTagName('option');
+            
+            for (let i = 0; i < options.length; i++) {
+                const option = options[i];
+                const txtValue = option.textContent || option.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    option.style.display = "";
+                } else {
+                    option.style.display = "none";
+                }
+            }
+        }
+        
+        // 搜索关系下拉框选项
+        function searchRelationPersonOptions() {
+            const input = document.getElementById('relation-person-search');
+            const filter = input.value.toUpperCase();
+            const select = document.getElementById('relation-person');
+            const options = select.getElementsByTagName('option');
+            
+            for (let i = 0; i < options.length; i++) {
+                const option = options[i];
+                const txtValue = option.textContent || option.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    option.style.display = "";
+                } else {
+                    option.style.display = "none";
+                }
+            }
+        }
+        
+        // 改变当前编辑人物
+        function changeCurrentPerson(personName) {
+            if (!personName) return;
+            
+            currentEditPerson = personName;
+            populateRelationDropdown();
+            populateExistingRelations();
+            document.getElementById('special-mark').value = relations[personName].special || "";
+            
+            // 高亮显示选中人物
+            highlightPerson(personName);
+            showPersonInfo(personName);
         }
         
         // 初始化页面
@@ -1467,6 +1688,10 @@
                     document.getElementById('password-section').style.display = 'none';
                     document.getElementById('edit-section').style.display = 'block';
                     document.getElementById('password-error').style.display = 'none';
+                    
+                    // 初始化下拉框
+                    populateCurrentPersonDropdown();
+                    populateRelationDropdown();
                 } else {
                     document.getElementById('password-error').style.display = 'block';
                 }
@@ -1497,6 +1722,20 @@
             
             // 添加新人物
             document.getElementById('add-person-btn').addEventListener('click', addNewPerson);
+            
+            // 重置数据
+            document.getElementById('reset-data').addEventListener('click', resetData);
+            
+            // 当前人物搜索
+            document.getElementById('current-person-search').addEventListener('keyup', searchCurrentPersonOptions);
+            
+            // 关系人物搜索
+            document.getElementById('relation-person-search').addEventListener('keyup', searchRelationPersonOptions);
+            
+            // 当前人物选择变化
+            document.getElementById('current-person-select').addEventListener('change', function() {
+                changeCurrentPerson(this.value);
+            });
             
             // 确保函数在全局可访问
             window.highlightPerson = highlightPerson;
