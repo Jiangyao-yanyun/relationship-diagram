@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>百业关系图谱</title>
+    <title>百业关系图谱 - 管理员增强版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -37,6 +37,7 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
         }
         
         h1 {
@@ -63,7 +64,7 @@
         }
         
         #search-input {
-            width: 70%;
+            width: 60%;
             padding: 12px 20px;
             border: none;
             border-radius: 50px;
@@ -197,6 +198,7 @@
             border-radius: 20px;
             cursor: pointer;
             transition: all 0.2s ease;
+            color: #fff; /* 确保文字可见 */
         }
         
         .relation-item:hover {
@@ -299,11 +301,182 @@
             font-size: 1.5rem;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
             transition: all 0.2s ease;
+            color: white;
         }
         
         .zoom-btn:hover {
             background: rgba(255, 255, 255, 0.3);
             transform: scale(1.1);
+        }
+        
+        .admin-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        
+        #admin-btn {
+            background: linear-gradient(45deg, #00c853, #0091ea);
+        }
+        
+        .admin-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .admin-content {
+            background: #2c3e50;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            color: #ecf0f1; /* 确保文字可见 */
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+        }
+        
+        .admin-header h2 {
+            color: #3498db;
+            font-size: 1.8rem;
+        }
+        
+        .close-admin {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .close-admin:hover {
+            color: #e74c3c;
+            transform: scale(1.2);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ecf0f1;
+            font-weight: bold;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #3498db;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #1abc9c;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.3);
+        }
+        
+        .admin-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .admin-actions button {
+            flex: 1;
+            padding: 12px;
+            font-size: 1rem;
+        }
+        
+        .btn-save {
+            background: linear-gradient(45deg, #2ecc71, #1abc9c);
+        }
+        
+        .btn-delete {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+        
+        .btn-add {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+        }
+        
+        .relation-types {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .relation-type {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #ecf0f1;
+        }
+        
+        .relation-type:hover, .relation-type.active {
+            background: #3498db;
+            transform: translateY(-3px);
+        }
+        
+        .password-form {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        
+        .password-form input {
+            margin: 10px 0;
+        }
+        
+        #existing-relations .relation-item {
+            background: rgba(52, 152, 219, 0.2);
+            color: #ecf0f1;
+            margin-bottom: 8px;
+        }
+        
+        .new-person-form {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .relation-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
         }
         
         @media (max-width: 1100px) {
@@ -315,14 +488,31 @@
             #graph-container {
                 height: 500px;
             }
+            
+            .admin-modal {
+                padding: 10px;
+            }
+            
+            .admin-content {
+                width: 95%;
+                padding: 20px;
+            }
+            
+            .relation-types {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-sitemap"></i> 百业关系图谱</h1>
+            <h1><i class="fas fa-sitemap"></i> 百业关系图谱 - 管理员增强版</h1>
             <p class="subtitle">点击人物节点查看详细信息，使用搜索框快速查找人物</p>
+            
+            <div class="admin-panel">
+                <button id="admin-btn"><i class="fas fa-lock"></i> 管理员登录</button>
+            </div>
             
             <div class="search-container">
                 <input type="text" id="search-input" placeholder="输入人物名称进行搜索...">
@@ -351,6 +541,10 @@
                     <div class="legend-color" style="background-color: #ba68c8;"></div>
                     <span>疑似被夺舍</span>
                 </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #9b59b6;"></div>
+                    <span>结义关系</span>
+                </div>
             </div>
         </header>
         
@@ -374,8 +568,91 @@
         </div>
         
         <footer>
-            <p>© 百业关系图谱 | 如需修改联系江杳</p>
+            <p>©百业关系图谱 | 如需修改联系江杳或管理员</p>
         </footer>
+    </div>
+
+    <!-- 管理员模态框 -->
+    <div class="admin-modal" id="admin-modal">
+        <div class="admin-content">
+            <div class="admin-header">
+                <h2><i class="fas fa-user-shield"></i> 关系管理面板</h2>
+                <button class="close-admin" id="close-admin">&times;</button>
+            </div>
+            
+            <div class="password-form" id="password-section">
+                <h3><i class="fas fa-key"></i> 管理员登录</h3>
+                <div class="form-group">
+                    <label for="admin-password">请输入管理密码：</label>
+                    <input type="password" id="admin-password" class="form-control" placeholder="输入密码...">
+                </div>
+                <button id="login-btn" class="btn-save">登录</button>
+                <p id="password-error" style="color: #e74c3c; margin-top: 10px; display: none;">
+                    <i class="fas fa-exclamation-circle"></i> 密码错误，请重试！
+                </p>
+            </div>
+            
+            <div id="edit-section" style="display: none;">
+                <div class="form-group">
+                    <label>当前编辑人物：</label>
+                    <div id="current-person" style="font-size: 1.4rem; color: #3498db; padding: 10px 0;"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label>添加关系：</label>
+                    <select id="relation-person" class="form-control">
+                        <option value="">选择人物...</option>
+                        <!-- 人物选项将通过JS动态填充 -->
+                    </select>
+                    
+                    <label style="margin-top: 15px;">关系类型：</label>
+                    <div class="relation-types">
+                        <div class="relation-type" data-type="徒弟">
+                            <i class="fas fa-user-graduate"></i> 徒弟
+                        </div>
+                        <div class="relation-type" data-type="侠缘">
+                            <i class="fas fa-heart"></i> 侠缘
+                        </div>
+                        <div class="relation-type" data-type="姐妹">
+                            <i class="fas fa-female"></i> 姐妹
+                        </div>
+                        <div class="relation-type" data-type="结义">
+                            <i class="fas fa-handshake"></i> 结义
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>删除关系：</label>
+                    <div id="existing-relations">
+                        <!-- 现有关系将通过JS动态填充 -->
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>特殊标记：</label>
+                    <select id="special-mark" class="form-control">
+                        <option value="">无特殊标记</option>
+                        <option value="已叛逃师门">已叛逃师门</option>
+                        <option value="疑似已被夺舍">疑似已被夺舍</option>
+                    </select>
+                </div>
+                
+                <div class="admin-actions">
+                    <button id="save-btn" class="btn-save"><i class="fas fa-save"></i> 保存更改</button>
+                    <button id="delete-person" class="btn-delete"><i class="fas fa-trash-alt"></i> 删除人物</button>
+                </div>
+                
+                <div class="new-person-form">
+                    <h3><i class="fas fa-user-plus"></i> 添加新人物</h3>
+                    <div class="form-group">
+                        <label for="new-person-name">人物名称：</label>
+                        <input type="text" id="new-person-name" class="form-control" placeholder="输入新人物名称...">
+                    </div>
+                    <button id="add-person-btn" class="btn-add"><i class="fas fa-plus-circle"></i> 添加人物</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -451,7 +728,7 @@
                 "徒弟": ["李佳盛"],
                 "special": ""
             },
-            // 添加可能缺失的人物
+            // 添加其他人物
             "轩辕慕玥": {"special": ""},
             "星枫飘缈": {"special": ""},
             "菠萝油多士": {"special": ""},
@@ -463,7 +740,6 @@
             "封存余味": {"special": ""},
             "白夜云帆": {"special": ""},
             "林酒行": {"special": ""},
-            "禾老三": {"special": ""},
             "流年": {"special": ""},
             "江嬴晚": {"special": ""},
             "陆炎墨": {"special": ""},
@@ -487,9 +763,13 @@
             "李佳盛": {"special": ""}
         };
 
-        // 全局变量用于缩放
+        // 全局变量
         let transform = d3.zoomIdentity;
         let svg, g;
+        let simulation;
+        let currentEditPerson = null;
+        const adminPassword = "yanyun123"; // 管理员密码
+        let isAdminLoggedIn = false;
 
         // 创建D3力导向图
         function createGraph() {
@@ -511,7 +791,7 @@
                         g.attr("transform", event.transform);
                     })
                 )
-                .on("dblclick.zoom", null); // 禁用双击缩放
+                .on("dblclick.zoom", null);
                 
             g = svg.append("g");
             
@@ -559,10 +839,21 @@
                         links.push({ source: person, target: sister, type: "姐妹" });
                     });
                 }
+                
+                // 添加结义
+                if (relations[person].结义) {
+                    relations[person].结义.forEach(brother => {
+                        if (!nodeMap[brother]) {
+                            nodes.push({ id: brother });
+                            nodeMap[brother] = true;
+                        }
+                        links.push({ source: person, target: brother, type: "结义" });
+                    });
+                }
             });
             
             // 创建力导向图模拟
-            const simulation = d3.forceSimulation(nodes)
+            simulation = d3.forceSimulation(nodes)
                 .force("link", d3.forceLink(links).id(d => d.id).distance(150))
                 .force("charge", d3.forceManyBody().strength(-300))
                 .force("center", d3.forceCenter(width / 2, height / 2))
@@ -577,9 +868,10 @@
                 .append("line")
                 .attr("class", "link")
                 .attr("stroke", d => {
-                    if (d.type === "侠缘") return "#ffb74d";
-                    if (d.type === "姐妹") return "#ffb74d";
-                    return "rgba(255, 255, 255, 0.4)";
+                    if (d.type === "侠缘") return "#ffb74d"; // 橙色
+                    if (d.type === "姐妹") return "#ffb74d"; // 橙色
+                    if (d.type === "结义") return "#9b59b6"; // 紫色
+                    return "rgba(255, 255, 255, 0.4)"; // 默认白色
                 })
                 .attr("stroke-dasharray", d => d.type === "侠缘" ? "5,5" : "none");
             
@@ -593,24 +885,36 @@
                 .attr("class", "node")
                 .attr("r", 10)
                 .attr("fill", d => {
-                    if (d.id === "剑起御春风" || d.id === "凤鹤川") return "#f06292";
-                    if (d.id === "机韶逸") return "#ba68c8";
+                    if (d.id === "剑起御春风" || d.id === "凤鹤川") return "#f06292"; // 红色
+                    if (d.id === "机韶逸") return "#ba68c8"; // 紫色
                     
-                    const isMaster = relations[d.id] && relations[d.id].徒弟 && relations[d.id].徒弟.length > 0;
-                    if (isMaster) return "#81c784";
+                    const isMaster = relations[d.id] && 
+                                    ((relations[d.id].徒弟 && relations[d.id].徒弟.length > 0) ||
+                                     (relations[d.id].结义 && relations[d.id].结义.length > 0));
+                    if (isMaster) return "#81c784"; // 绿色
                     
                     const hasSpecialRelation = Object.keys(relations).some(person => {
                         return (relations[person].侠缘 && relations[person].侠缘.includes(d.id)) ||
-                               (relations[person].姐妹 && relations[person].姐妹.includes(d.id));
+                               (relations[person].姐妹 && relations[person].姐妹.includes(d.id)) ||
+                               (relations[person].结义 && relations[person].结义.includes(d.id));
                     });
                     
-                    if (hasSpecialRelation) return "#ffb74d";
+                    if (hasSpecialRelation) return "#ffb74d"; // 橙色
                     
-                    return "#4fc3f7";
+                    return "#4fc3f7"; // 蓝色
                 })
                 .on("click", function(event, d) {
                     showPersonInfo(d.id);
                     highlightPerson(d.id);
+                    
+                    // 如果管理员已登录，设置当前编辑人物
+                    if (isAdminLoggedIn) {
+                        currentEditPerson = d.id;
+                        document.getElementById('current-person').textContent = d.id;
+                        populateRelationDropdown();
+                        populateExistingRelations();
+                        document.getElementById('special-mark').value = relations[d.id].special || "";
+                    }
                 })
                 .call(d3.drag()
                     .on("start", dragstarted)
@@ -772,6 +1076,24 @@
                 `;
             }
             
+            // 添加结义信息
+            if (personInfo.结义 && personInfo.结义.length > 0) {
+                html += `
+                    <div class="relation-section">
+                        <h4><i class="fas fa-handshake"></i> 结义兄弟</h4>
+                        <div class="relations">
+                `;
+                
+                personInfo.结义.forEach(brother => {
+                    html += `<div class="relation-item" onclick="highlightPerson('${brother}')">${brother}</div>`;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
             html += `</div>`;
             infoPanel.innerHTML = html;
         }
@@ -813,6 +1135,263 @@
                     .classed("highlight", false)
                     .attr("r", 10);
             }
+        }
+        
+        // 管理员功能
+        
+        // 填充关系下拉框
+        function populateRelationDropdown() {
+            const select = document.getElementById('relation-person');
+            select.innerHTML = '<option value="">选择人物...</option>';
+            
+            // 获取所有人物（排除当前编辑人物）
+            Object.keys(relations)
+                .filter(person => person !== currentEditPerson)
+                .forEach(person => {
+                    const option = document.createElement('option');
+                    option.value = person;
+                    option.textContent = person;
+                    select.appendChild(option);
+                });
+        }
+        
+        // 填充现有关系
+        function populateExistingRelations() {
+            const container = document.getElementById('existing-relations');
+            container.innerHTML = '';
+            
+            if (!currentEditPerson || !relations[currentEditPerson]) return;
+            
+            const personInfo = relations[currentEditPerson];
+            
+            // 显示徒弟关系
+            if (personInfo.徒弟 && personInfo.徒弟.length > 0) {
+                const section = document.createElement('div');
+                section.className = 'relation-section';
+                section.innerHTML = `
+                    <h4><i class="fas fa-users"></i> 徒弟</h4>
+                    <div class="relations" id="disciples-relations"></div>
+                `;
+                container.appendChild(section);
+                
+                const relationsDiv = document.getElementById('disciples-relations');
+                personInfo.徒弟.forEach(disciple => {
+                    const relationItem = document.createElement('div');
+                    relationItem.className = 'relation-item';
+                    relationItem.innerHTML = `<span class="relation-color" style="background-color:#81c784"></span>${disciple}`;
+                    relationItem.onclick = () => removeRelation('徒弟', disciple);
+                    relationsDiv.appendChild(relationItem);
+                });
+            }
+            
+            // 显示侠缘关系
+            if (personInfo.侠缘 && personInfo.侠缘.length > 0) {
+                const section = document.createElement('div');
+                section.className = 'relation-section';
+                section.innerHTML = `
+                    <h4><i class="fas fa-heart"></i> 侠缘</h4>
+                    <div class="relations" id="partners-relations"></div>
+                `;
+                container.appendChild(section);
+                
+                const relationsDiv = document.getElementById('partners-relations');
+                personInfo.侠缘.forEach(partner => {
+                    const relationItem = document.createElement('div');
+                    relationItem.className = 'relation-item';
+                    relationItem.innerHTML = `<span class="relation-color" style="background-color:#ffb74d"></span>${partner}`;
+                    relationItem.onclick = () => removeRelation('侠缘', partner);
+                    relationsDiv.appendChild(relationItem);
+                });
+            }
+            
+            // 显示姐妹关系
+            if (personInfo.姐妹 && personInfo.姐妹.length > 0) {
+                const section = document.createElement('div');
+                section.className = 'relation-section';
+                section.innerHTML = `
+                    <h4><i class="fas fa-female"></i> 姐妹</h4>
+                    <div class="relations" id="sisters-relations"></div>
+                `;
+                container.appendChild(section);
+                
+                const relationsDiv = document.getElementById('sisters-relations');
+                personInfo.姐妹.forEach(sister => {
+                    const relationItem = document.createElement('div');
+                    relationItem.className = 'relation-item';
+                    relationItem.innerHTML = `<span class="relation-color" style="background-color:#ffb74d"></span>${sister}`;
+                    relationItem.onclick = () => removeRelation('姐妹', sister);
+                    relationsDiv.appendChild(relationItem);
+                });
+            }
+            
+            // 显示结义关系
+            if (personInfo.结义 && personInfo.结义.length > 0) {
+                const section = document.createElement('div');
+                section.className = 'relation-section';
+                section.innerHTML = `
+                    <h4><i class="fas fa-handshake"></i> 结义兄弟</h4>
+                    <div class="relations" id="brothers-relations"></div>
+                `;
+                container.appendChild(section);
+                
+                const relationsDiv = document.getElementById('brothers-relations');
+                personInfo.结义.forEach(brother => {
+                    const relationItem = document.createElement('div');
+                    relationItem.className = 'relation-item';
+                    relationItem.innerHTML = `<span class="relation-color" style="background-color:#9b59b6"></span>${brother}`;
+                    relationItem.onclick = () => removeRelation('结义', brother);
+                    relationsDiv.appendChild(relationItem);
+                });
+            }
+        }
+        
+        // 移除关系
+        function removeRelation(relationType, targetPerson) {
+            if (!confirm(`确定要删除与 ${targetPerson} 的${relationType}关系吗？`)) return;
+            
+            // 从当前人物关系中删除
+            const index = relations[currentEditPerson][relationType].indexOf(targetPerson);
+            if (index !== -1) {
+                relations[currentEditPerson][relationType].splice(index, 1);
+            }
+            
+            // 更新UI
+            populateExistingRelations();
+            createGraph();
+            showPersonInfo(currentEditPerson);
+            highlightPerson(currentEditPerson);
+            alert("关系已删除！");
+        }
+        
+        // 添加关系
+        function addRelation() {
+            const targetPerson = document.getElementById('relation-person').value;
+            const relationType = document.querySelector('.relation-type.active')?.dataset.type;
+            
+            if (!targetPerson) {
+                alert("请选择一个人物");
+                return;
+            }
+            
+            if (!relationType) {
+                alert("请选择关系类型");
+                return;
+            }
+            
+            // 确保关系类型存在
+            if (!relations[currentEditPerson][relationType]) {
+                relations[currentEditPerson][relationType] = [];
+            }
+            
+            // 添加关系
+            if (!relations[currentEditPerson][relationType].includes(targetPerson)) {
+                relations[currentEditPerson][relationType].push(targetPerson);
+            }
+            
+            // 如果是结义关系，需要在对方关系中也添加
+            if (relationType === "结义") {
+                if (!relations[targetPerson]) {
+                    relations[targetPerson] = { special: "" };
+                }
+                
+                if (!relations[targetPerson].结义) {
+                    relations[targetPerson].结义 = [];
+                }
+                
+                if (!relations[targetPerson].结义.includes(currentEditPerson)) {
+                    relations[targetPerson].结义.push(currentEditPerson);
+                }
+            }
+            
+            // 更新UI
+            populateExistingRelations();
+            createGraph();
+            showPersonInfo(currentEditPerson);
+            highlightPerson(currentEditPerson);
+            alert("关系已添加！");
+            
+            // 重置选择
+            document.getElementById('relation-person').value = "";
+            document.querySelectorAll('.relation-type').forEach(el => {
+                el.classList.remove('active');
+            });
+        }
+        
+        // 保存更改
+        function saveChanges() {
+            // 更新特殊标记
+            relations[currentEditPerson].special = document.getElementById('special-mark').value || "";
+            
+            // 更新UI
+            createGraph();
+            showPersonInfo(currentEditPerson);
+            highlightPerson(currentEditPerson);
+            alert("更改已保存！");
+        }
+        
+        // 删除人物
+        function deletePerson() {
+            if (!confirm(`确定要删除人物 ${currentEditPerson} 吗？此操作不可撤销！`)) return;
+            
+            // 删除人物
+            delete relations[currentEditPerson];
+            
+            // 从所有关系中删除该人物
+            Object.keys(relations).forEach(person => {
+                ['徒弟', '侠缘', '姐妹', '结义'].forEach(relationType => {
+                    if (relations[person][relationType]) {
+                        const index = relations[person][relationType].indexOf(currentEditPerson);
+                        if (index !== -1) {
+                            relations[person][relationType].splice(index, 1);
+                        }
+                    }
+                });
+            });
+            
+            // 重置UI
+            currentEditPerson = null;
+            document.getElementById('current-person').textContent = "";
+            document.getElementById('existing-relations').innerHTML = "";
+            document.getElementById('special-mark').value = "";
+            
+            // 重新创建图谱
+            createGraph();
+            document.getElementById('info-panel').innerHTML = `
+                <h2><i class="fas fa-info-circle"></i> 人物详情</h2>
+                <div class="no-results">
+                    <i class="fas fa-user fa-3x"></i>
+                    <p>点击左侧图谱中的人物节点查看详细信息</p>
+                </div>
+            `;
+            
+            alert("人物已删除！");
+        }
+        
+        // 添加新人物
+        function addNewPerson() {
+            const newPersonName = document.getElementById('new-person-name').value.trim();
+            
+            if (!newPersonName) {
+                alert("请输入人物名称");
+                return;
+            }
+            
+            if (relations[newPersonName]) {
+                alert("该人物已存在");
+                return;
+            }
+            
+            // 添加新人物
+            relations[newPersonName] = {
+                special: ""
+            };
+            
+            // 更新UI
+            document.getElementById('new-person-name').value = "";
+            populateRelationDropdown();
+            createGraph();
+            
+            alert(`人物 ${newPersonName} 添加成功！`);
         }
         
         // 初始化页面
@@ -860,6 +1439,54 @@
                 transform = d3.zoomIdentity;
                 g.attr('transform', transform);
             });
+            
+            // 管理员功能
+            document.getElementById('admin-btn').addEventListener('click', function() {
+                document.getElementById('admin-modal').style.display = 'flex';
+            });
+            
+            document.getElementById('close-admin').addEventListener('click', function() {
+                document.getElementById('admin-modal').style.display = 'none';
+                document.getElementById('password-error').style.display = 'none';
+            });
+            
+            document.getElementById('login-btn').addEventListener('click', function() {
+                const password = document.getElementById('admin-password').value;
+                if (password === adminPassword) {
+                    isAdminLoggedIn = true;
+                    document.getElementById('password-section').style.display = 'none';
+                    document.getElementById('edit-section').style.display = 'block';
+                    document.getElementById('password-error').style.display = 'none';
+                } else {
+                    document.getElementById('password-error').style.display = 'block';
+                }
+            });
+            
+            // 关系类型选择
+            document.querySelectorAll('.relation-type').forEach(item => {
+                item.addEventListener('click', function() {
+                    document.querySelectorAll('.relation-type').forEach(el => {
+                        el.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                });
+            });
+            
+            // 添加关系按钮
+            document.getElementById('relation-person').addEventListener('change', function() {
+                if (this.value) {
+                    addRelation();
+                }
+            });
+            
+            // 保存更改
+            document.getElementById('save-btn').addEventListener('click', saveChanges);
+            
+            // 删除人物
+            document.getElementById('delete-person').addEventListener('click', deletePerson);
+            
+            // 添加新人物
+            document.getElementById('add-person-btn').addEventListener('click', addNewPerson);
             
             // 确保函数在全局可访问
             window.highlightPerson = highlightPerson;
